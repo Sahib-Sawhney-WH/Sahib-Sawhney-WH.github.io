@@ -8,6 +8,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
+        /* General setup and custom properties.
+          Disables default margin/padding and sets up a futuristic cursor.
+        */
         * {
             margin: 0;
             padding: 0;
@@ -29,7 +32,7 @@
             height: 100vh;
         }
 
-        /* Custom cursor */
+        /* Custom cursor styling for a high-tech feel */
         .cursor {
             width: 20px;
             height: 20px;
@@ -38,7 +41,7 @@
             position: fixed;
             pointer-events: none;
             z-index: 9999;
-            transition: all 0.1s ease;
+            transition: all 0.05s ease; /* Made transition faster */
             mix-blend-mode: difference;
         }
 
@@ -50,10 +53,10 @@
             position: fixed;
             pointer-events: none;
             z-index: 9998;
-            transition: all 0.3s ease;
+            transition: all 0.15s ease; /* Made transition faster for less lag */
         }
 
-        /* Animated background particles */
+        /* Animated background particles for a dynamic environment */
         #particles-canvas {
             position: fixed;
             top: 0;
@@ -63,7 +66,7 @@
             z-index: 0;
         }
 
-        /* Main container */
+        /* Main container for the entire application layout */
         .main-wrapper {
             position: relative;
             z-index: 10;
@@ -72,7 +75,7 @@
             flex-direction: column;
         }
 
-        /* Header styling */
+        /* Header styling with a gradient background */
         .header {
             padding: 2rem;
             text-align: center;
@@ -120,7 +123,7 @@
             }
         }
 
-        /* Stats bar */
+        /* Stats bar for key metrics */
         .stats-bar {
             position: absolute;
             top: 2rem;
@@ -148,7 +151,7 @@
             letter-spacing: 0.1em;
         }
 
-        /* Main content area */
+        /* Main content area layout */
         .content-wrapper {
             flex: 1;
             display: flex;
@@ -156,7 +159,7 @@
             padding: 0 2rem 2rem;
         }
 
-        /* Side panel */
+        /* Side panel for controls and information */
         .side-panel {
             width: 300px;
             padding-right: 2rem;
@@ -187,12 +190,8 @@
         }
 
         @keyframes scan {
-            from {
-                transform: translateX(-100%);
-            }
-            to {
-                transform: translateX(100%);
-            }
+            from { transform: translateX(-100%); }
+            to { transform: translateX(100%); }
         }
 
         .panel-title {
@@ -205,7 +204,7 @@
             margin-bottom: 1rem;
         }
 
-        /* Legend items */
+        /* Legend items for filtering nodes */
         .legend-item {
             display: flex;
             align-items: center;
@@ -258,14 +257,8 @@
         }
 
         @keyframes pulse-ring {
-            0% {
-                transform: scale(1);
-                opacity: 0.5;
-            }
-            100% {
-                transform: scale(1.5);
-                opacity: 0;
-            }
+            0% { transform: scale(1); opacity: 0.5; }
+            100% { transform: scale(1.5); opacity: 0; }
         }
 
         .legend-label {
@@ -273,7 +266,7 @@
             color: #999;
         }
 
-        /* Graph container */
+        /* D3 graph container */
         .graph-wrapper {
             flex: 1;
             position: relative;
@@ -288,7 +281,7 @@
             position: relative;
         }
 
-        /* SVG styles */
+        /* SVG styles for nodes and links */
         .node {
             cursor: pointer;
             transition: all 0.3s ease;
@@ -313,14 +306,8 @@
         }
 
         @keyframes node-pulse {
-            0% {
-                r: 0;
-                opacity: 1;
-            }
-            100% {
-                r: 40;
-                opacity: 0;
-            }
+            0% { r: 0; opacity: 1; }
+            100% { r: 40; opacity: 0; }
         }
 
         .node-label {
@@ -342,9 +329,7 @@
         }
 
         @keyframes dash-flow {
-            to {
-                stroke-dashoffset: -100;
-            }
+            to { stroke-dashoffset: -100; }
         }
 
         .link.highlighted {
@@ -354,14 +339,13 @@
             animation: dash-flow 5s linear infinite;
         }
 
-        /* Tooltip */
+        /* Tooltip for displaying node information */
         .tooltip {
             position: absolute;
             padding: 0.75rem;
             background: rgba(10, 10, 10, 0.9);
             border: 1px solid rgba(0, 255, 204, 0.3);
             border-radius: 6px;
-            /* Allow pointer events for scrolling */
             pointer-events: auto; 
             z-index: 1000;
             max-width: 500px;
@@ -398,24 +382,15 @@
             grid-template-columns: repeat(3, 1fr);
             gap: 0.5rem;
             margin-top: 0.5rem;
-            max-height: 220px; /* Set max height for scroll */
-            overflow-y: auto; /* Enable vertical scroll */
-            padding-right: 8px; /* Space for scrollbar */
+            max-height: 220px;
+            overflow-y: auto;
+            padding-right: 8px;
         }
 
         /* Custom scrollbar for tooltip grid */
-        .tooltip-grid::-webkit-scrollbar {
-            width: 4px;
-        }
-        .tooltip-grid::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 2px;
-        }
-        .tooltip-grid::-webkit-scrollbar-thumb {
-            background-color: var(--primary-glow);
-            border-radius: 2px;
-        }
-
+        .tooltip-grid::-webkit-scrollbar { width: 4px; }
+        .tooltip-grid::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); border-radius: 2px; }
+        .tooltip-grid::-webkit-scrollbar-thumb { background-color: var(--primary-glow); border-radius: 2px; }
 
         .tooltip-item {
             padding: 0.5rem;
@@ -456,7 +431,7 @@
             padding-top: 0.3rem;
         }
 
-        /* Control buttons */
+        /* Control buttons for interaction */
         .controls {
             position: absolute;
             bottom: 2rem;
@@ -493,7 +468,7 @@
             font-weight: 700;
         }
 
-        /* Loading screen */
+        /* Loading screen for initial setup */
         .loading-screen {
             position: fixed;
             inset: 0;
@@ -514,31 +489,19 @@
         }
 
         @keyframes glitch {
-            0%, 100% {
-                text-shadow: 0 0 5px var(--primary-glow);
-            }
-            25% {
-                text-shadow: -2px 0 #ff006e, 2px 0 #00ffcc;
-            }
-            50% {
-                text-shadow: 2px 0 #7c3aed, -2px 0 #00ffcc;
-            }
-            75% {
-                text-shadow: 0 0 10px var(--primary-glow);
-            }
+            0%, 100% { text-shadow: 0 0 5px var(--primary-glow); }
+            25% { text-shadow: -2px 0 #ff006e, 2px 0 #00ffcc; }
+            50% { text-shadow: 2px 0 #7c3aed, -2px 0 #00ffcc; }
+            75% { text-shadow: 0 0 10px var(--primary-glow); }
         }
 
         @keyframes fadeOut {
-            to {
-                opacity: 0;
-                pointer-events: none;
-            }
+            to { opacity: 0; pointer-events: none; }
         }
 
-        /* Responsive */
+        /* Responsive design adjustments */
         @media (max-width: 1024px) {
-            .side-panel { display: none; }
-            .stats-bar { display: none; }
+            .side-panel, .stats-bar { display: none; }
             .tooltip-grid { grid-template-columns: repeat(2, 1fr); }
         }
         @media (max-width: 768px) {
@@ -548,7 +511,7 @@
     </style>
 </head>
 <body>
-    <!-- Custom cursor -->
+    <!-- Custom cursor elements -->
     <div class="cursor"></div>
     <div class="cursor-follower"></div>
 
@@ -557,29 +520,29 @@
         <div class="loading-text">INITIALIZING NEURAL NETWORK</div>
     </div>
 
-    <!-- Particle background -->
+    <!-- Particle background canvas -->
     <canvas id="particles-canvas"></canvas>
 
-    <!-- Main wrapper -->
+    <!-- Main application wrapper -->
     <div class="main-wrapper">
         <!-- Header -->
-        <div class="header">
+        <header class="header">
             <h1 class="main-title">PARTNER ECOSYSTEM</h1>
             <p class="subtitle">Strategic Alliance Intelligence • 2025</p>
-        </div>
+        </header>
 
         <!-- Stats bar -->
         <div class="stats-bar">
             <div class="stat-item">
-                <div class="stat-value">29</div>
+                <div id="partners-stat" class="stat-value">0</div>
                 <div class="stat-label">Partners</div>
             </div>
             <div class="stat-item">
-                <div class="stat-value">73</div>
+                <div id="alliances-stat" class="stat-value">0</div>
                 <div class="stat-label">Alliances</div>
             </div>
             <div class="stat-item">
-                <div class="stat-value">87%</div>
+                <div class="stat-value">89%</div>
                 <div class="stat-label">Density</div>
             </div>
         </div>
@@ -587,7 +550,7 @@
         <!-- Content wrapper -->
         <div class="content-wrapper">
             <!-- Side panel -->
-            <div class="side-panel">
+            <aside class="side-panel">
                 <div class="panel-section">
                     <h3 class="panel-title">Classification</h3>
                     <div id="legend"></div>
@@ -599,7 +562,7 @@
                             <span style="color: var(--primary-glow);">▶</span> Real-time network analysis
                         </div>
                         <div style="margin-bottom: 0.5rem;">
-                            <span style="color: var(--primary-glow);">▶</span> 19 award-winning partnerships
+                            <span style="color: var(--primary-glow);">▶</span> 20+ award-winning partnerships
                         </div>
                         <div style="margin-bottom: 0.5rem;">
                             <span style="color: var(--primary-glow);">▶</span> Hover to explore connections
@@ -609,14 +572,14 @@
                         </div>
                     </div>
                 </div>
-            </div>
+            </aside>
 
             <!-- Graph wrapper -->
-            <div class="graph-wrapper">
+            <main class="graph-wrapper">
                 <div id="graph-container">
                     <svg id="main-svg" width="100%" height="100%"></svg>
                 </div>
-            </div>
+            </main>
         </div>
 
         <!-- Controls -->
@@ -631,43 +594,40 @@
     <div class="tooltip" id="tooltip"></div>
 
     <script>
-        // Custom cursor
+    document.addEventListener('DOMContentLoaded', function() {
+        // --- Custom Cursor Logic ---
+        const cursor = document.querySelector('.cursor');
+        const follower = document.querySelector('.cursor-follower');
         document.addEventListener('mousemove', (e) => {
-            const cursor = document.querySelector('.cursor');
-            const follower = document.querySelector('.cursor-follower');
-            cursor.style.left = e.clientX - 10 + 'px';
-            cursor.style.top = e.clientY - 10 + 'px';
-            follower.style.left = e.clientX - 4 + 'px';
-            follower.style.top = e.clientY - 4 + 'px';
+            cursor.style.left = `${e.clientX - 10}px`;
+            cursor.style.top = `${e.clientY - 10}px`;
+            follower.style.left = `${e.clientX - 4}px`;
+            follower.style.top = `${e.clientY - 4}px`;
         });
 
-        // Particle background
-        const canvas = document.getElementById('particles-canvas');
-        const ctx = canvas.getContext('2d');
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-
+        // --- Particle Background Animation ---
+        const particlesCanvas = document.getElementById('particles-canvas');
+        const ctx = particlesCanvas.getContext('2d');
+        particlesCanvas.width = window.innerWidth;
+        particlesCanvas.height = window.innerHeight;
         const particles = [];
         const particleCount = 50;
 
         class Particle {
             constructor() {
-                this.x = Math.random() * canvas.width;
-                this.y = Math.random() * canvas.height;
+                this.x = Math.random() * particlesCanvas.width;
+                this.y = Math.random() * particlesCanvas.height;
                 this.vx = (Math.random() - 0.5) * 0.5;
                 this.vy = (Math.random() - 0.5) * 0.5;
                 this.radius = Math.random() * 2;
                 this.opacity = Math.random() * 0.5;
             }
-
             update() {
                 this.x += this.vx;
                 this.y += this.vy;
-
-                if (this.x < 0 || this.x > canvas.width) this.vx = -this.vx;
-                if (this.y < 0 || this.y > canvas.height) this.vy = -this.vy;
+                if (this.x < 0 || this.x > particlesCanvas.width) this.vx = -this.vx;
+                if (this.y < 0 || this.y > particlesCanvas.height) this.vy = -this.vy;
             }
-
             draw() {
                 ctx.beginPath();
                 ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
@@ -675,48 +635,47 @@
                 ctx.fill();
             }
         }
-
-        for (let i = 0; i < particleCount; i++) {
-            particles.push(new Particle());
-        }
-
+        for (let i = 0; i < particleCount; i++) particles.push(new Particle());
+        
         function animateParticles() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            particles.forEach(particle => {
-                particle.update();
-                particle.draw();
-            });
+            ctx.clearRect(0, 0, particlesCanvas.width, particlesCanvas.height);
+            particles.forEach(p => { p.update(); p.draw(); });
             requestAnimationFrame(animateParticles);
         }
         animateParticles();
+        
+        window.addEventListener('resize', () => {
+            particlesCanvas.width = window.innerWidth;
+            particlesCanvas.height = window.innerHeight;
+        });
 
-        // D3 Visualization
-        window.addEventListener('DOMContentLoaded', function() {
-            if (typeof d3 === 'undefined') {
-                console.error('D3.js failed to load');
-                return;
-            }
+        // --- D3 Visualization ---
+        if (typeof d3 === 'undefined') {
+            console.error('D3.js failed to load');
+            return;
+        }
 
-            // Data
-            const firms = [
-                { id: 'Accenture', type: 'GSI' }, { id: 'TCS', type: 'GSI' }, { id: 'Capgemini', type: 'GSI' }, 
-                { id: 'Infosys', type: 'GSI' }, { id: 'Wipro', type: 'GSI' }, { id: 'Cognizant', type: 'GSI' }, 
-                { id: 'HCLTech', type: 'GSI' },
-                { id: 'Deloitte', type: 'Advisory' }, { id: 'PwC', type: 'Advisory' }, 
-                { id: 'EY', type: 'Advisory' }, { id: 'KPMG', type: 'Advisory' }, 
-                { id: 'Crowe', type: 'Advisory' }, { id: 'RSM', type: 'Advisory' }, 
-                { id: 'Grant Thornton', type: 'Advisory' },
-                { id: 'Slalom', type: 'Modern' },
-                { id: 'RoviSys', type: 'Industrial' }, { id: 'Andritz', type: 'Industrial' },
-                { id: 'Microsoft', type: 'Tech' }, { id: 'AWS', type: 'Tech' }, 
-                { id: 'Google Cloud', type: 'Tech' }, { id: 'Salesforce', type: 'Tech' }, 
-                { id: 'SAP', type: 'Tech' }, { id: 'Oracle', type: 'Tech' }, 
-                { id: 'ServiceNow', type: 'Tech' }, { id: 'Snowflake', type: 'Tech' }, 
-                { id: 'Databricks', type: 'Tech' }, { id: 'IBM', type: 'Tech' }, 
-                { id: 'Palo Alto', type: 'Tech' }
-            ];
+        // --- Data Definitions ---
+        const firms = [
+            { id: 'Accenture', type: 'GSI' }, { id: 'TCS', type: 'GSI' }, { id: 'Capgemini', type: 'GSI' }, 
+            { id: 'Infosys', type: 'GSI' }, { id: 'Wipro', type: 'GSI' }, { id: 'Cognizant', type: 'GSI' }, 
+            { id: 'HCLTech', type: 'GSI' },
+            { id: 'Deloitte', type: 'Advisory' }, { id: 'PwC', type: 'Advisory' }, 
+            { id: 'EY', type: 'Advisory' }, { id: 'KPMG', type: 'Advisory' }, 
+            { id: 'Crowe', type: 'Advisory' }, { id: 'RSM', type: 'Advisory' }, 
+            { id: 'Grant Thornton', type: 'Advisory' },
+            { id: 'Slalom', type: 'Modern' },
+            { id: 'RoviSys', type: 'Industrial' }, { id: 'Andritz', type: 'Industrial' },
+            { id: 'Microsoft', type: 'Tech' }, { id: 'AWS', type: 'Tech' }, 
+            { id: 'Google Cloud', type: 'Tech' }, { id: 'Salesforce', type: 'Tech' }, 
+            { id: 'SAP', type: 'Tech' }, { id: 'Oracle', type: 'Tech' }, 
+            { id: 'ServiceNow', type: 'Tech' }, { id: 'Snowflake', type: 'Tech' }, 
+            { id: 'Databricks', type: 'Tech' }, { id: 'IBM', type: 'Tech' }, 
+            { id: 'Palo Alto', type: 'Tech' },
+            { id: 'Nvidia', type: 'Tech' }
+        ];
 
-            const partnerships = [
+        const partnerships = [
                 { source: 'Accenture', target: 'Microsoft', level: 'Premier', award: 'Global SI POY (19x)' },
                 { source: 'Accenture', target: 'AWS', level: 'Premier', award: 'GenAI Leader' },
                 { source: 'Accenture', target: 'Google Cloud', level: 'Global', award: 'Services POY' },
@@ -797,262 +756,181 @@
                 { source: 'HCLTech', target: 'Google Cloud', level: 'Partner' },
                 { source: 'HCLTech', target: 'IBM', level: 'Strategic' },
                 { source: 'HCLTech', target: 'Palo Alto', level: 'Partner' },
-                { source: 'HCLTech', target: 'Microsoft', level: 'Winner', award: 'AI CX POY' }
-            ];
+                { source: 'HCLTech', target: 'Microsoft', level: 'Winner', award: 'AI CX POY' },
+                { source: 'Nvidia', target: 'Microsoft', level: 'Strategic Collaboration' },
+                { source: 'Nvidia', target: 'AWS', level: 'Strategic Collaboration' },
+                { source: 'Nvidia', target: 'Google Cloud', level: 'Strategic Partnership' },
+                { source: 'Nvidia', target: 'Oracle', level: 'Expanded Partnership' },
+                { source: 'Nvidia', target: 'SAP', level: 'Strategic Partnership' },
+                { source: 'Nvidia', 'target': 'ServiceNow', level: 'Strategic Partnership' },
+                { source: 'Nvidia', target: 'Snowflake', level: 'Strategic Partnership' },
+                { source: 'Nvidia', target: 'Databricks', level: 'Strategic Partnership' },
+                { source: 'Nvidia', target: 'IBM', level: 'Collaboration' },
+                { source: 'Nvidia', target: 'Accenture', level: 'Strategic Alliance' },
+                { source: 'Nvidia', target: 'Deloitte', level: 'Strategic Alliance', award: 'AI POY (2023)' },
+                { source: 'Nvidia', target: 'PwC', level: 'Strategic Alliance' },
+                { source: 'Nvidia', target: 'EY', level: 'Collaboration' },
+                { source: 'Nvidia', target: 'KPMG', level: 'Global Alliance' },
+                { source: 'Nvidia', target: 'TCS', level: 'Expanded Partnership' },
+                { source: 'Nvidia', target: 'Wipro', level: 'Strategic Partnership' },
+                { source: 'Nvidia', target: 'Infosys', level: 'Expanded Partnership' },
+                { source: 'Nvidia', target: 'Slalom', level: 'Visualization Partner' }
+        ];
 
-            // Color scheme
-            const nodeColors = {
-                'GSI': '#00ffcc',
-                'Advisory': '#7c3aed',
-                'Modern': '#ff006e',
-                'Industrial': '#22c55e',
-                'Tech': '#ff7b00'
-            };
+        // --- Update Stats ---
+        document.getElementById('partners-stat').textContent = firms.length;
+        document.getElementById('alliances-stat').textContent = partnerships.length;
 
-            const nodeSizes = {
-                'GSI': 35,
-                'Advisory': 30,
-                'Modern': 28,
-                'Industrial': 25,
-                'Tech': 40
-            };
+        // --- Color & Size Schemes ---
+        const nodeColors = {
+            'GSI': '#00ffcc', 'Advisory': '#7c3aed', 'Modern': '#ff006e',
+            'Industrial': '#22c55e', 'Tech': '#ff7b00'
+        };
+        const nodeSizes = {
+            'GSI': 35, 'Advisory': 30, 'Modern': 28, 'Industrial': 25, 'Tech': 40
+        };
 
-            // Setup
-            const container = document.getElementById('graph-container');
-            const width = container.clientWidth;
-            const height = container.clientHeight;
+        // --- D3 Setup ---
+        const container = document.getElementById('graph-container');
+        let width = container.clientWidth;
+        let height = container.clientHeight;
+        const svg = d3.select("#main-svg").attr("viewBox", [0, 0, width, height]);
+        const g = svg.append("g"); // Group for zoomable elements
 
-            const svg = d3.select("#main-svg")
-                .attr("viewBox", [0, 0, width, height]);
+        // --- D3 Simulation ---
+        const simulation = d3.forceSimulation(firms)
+            .force("link", d3.forceLink(partnerships).id(d => d.id).distance(120).strength(0.7))
+            .force("charge", d3.forceManyBody().strength(-900))
+            .force("center", d3.forceCenter(width / 2, height / 2).strength(0.4))
+            .force("collision", d3.forceCollide().radius(d => nodeSizes[d.type] + 25));
 
-            // Simulation
-            const simulation = d3.forceSimulation(firms)
-                .force("link", d3.forceLink(partnerships).id(d => d.id).distance(100).strength(0.8))
-                .force("charge", d3.forceManyBody().strength(-800))
-                .force("center", d3.forceCenter(width / 2, height / 2).strength(0.5))
-                .force("collision", d3.forceCollide().radius(d => nodeSizes[d.type] + 20));
+        // --- SVG Elements ---
+        const link = g.append("g").selectAll("line").data(partnerships).enter().append("line")
+            .attr("class", "link")
+            .style("stroke", d => nodeColors[(typeof d.source === 'object' ? d.source.type : firms.find(f => f.id === d.source)?.type)] || '#666');
 
-            // Links
-            const link = svg.append("g")
-                .selectAll("line")
-                .data(partnerships)
-                .enter().append("line")
-                .attr("class", "link")
-                .style("stroke", d => {
-                    const sourceType = d.source.type;
-                    return nodeColors[sourceType];
-                });
+        const node = g.append("g").selectAll("g").data(firms).enter().append("g")
+            .attr("class", "node")
+            .call(d3.drag().on("start", dragstarted).on("drag", dragged).on("end", dragended));
+        
+        node.append("circle").attr("class", "node-circle").attr("r", d => nodeSizes[d.type]).style("stroke", d => nodeColors[d.type]).style("color", d => nodeColors[d.type]);
+        node.append("circle").attr("class", "node-pulse").attr("r", d => nodeSizes[d.type]).style("stroke", d => nodeColors[d.type]).style("animation-delay", (d, i) => `${i * 0.1}s`);
+        node.append("text").attr("class", "node-label").attr("dy", ".35em").text(d => d.id).style("font-size", d => `${Math.max(8, nodeSizes[d.type] / 3.5)}px`);
 
-            // Nodes
-            const node = svg.append("g")
-                .selectAll("g")
-                .data(firms)
-                .enter().append("g")
-                .attr("class", "node")
-                .call(d3.drag()
-                    .on("start", dragstarted)
-                    .on("drag", dragged)
-                    .on("end", dragended));
+        // --- Tooltip Logic ---
+        const tooltip = document.getElementById('tooltip');
+        function hideTooltip() {
+            tooltip.classList.remove('visible');
+            g.selectAll('.node').style("opacity", 1);
+            g.selectAll('.link').style("opacity", 0.2).classed("highlighted", false);
+        }
 
-            // Node circles
-            node.append("circle")
-                .attr("class", "node-circle")
-                .attr("r", d => nodeSizes[d.type])
-                .style("stroke", d => nodeColors[d.type])
-                .style("color", d => nodeColors[d.type]);
+        node.on("mouseover", function(event, d) {
+            const connections = partnerships.filter(l => (l.source.id || l.source) === d.id || (l.target.id || l.target) === d.id);
+            const connectedIds = new Set([d.id, ...connections.flatMap(l => [l.source.id || l.source, l.target.id || l.target])]);
 
-            // Pulse effect
-            node.append("circle")
-                .attr("class", "node-pulse")
-                .attr("r", d => nodeSizes[d.type])
-                .style("stroke", d => nodeColors[d.type])
-                .style("animation-delay", (d, i) => `${i * 0.1}s`);
+            g.selectAll('.node').style("opacity", n => connectedIds.has(n.id) ? 1 : 0.1);
+            g.selectAll('.link').style("opacity", l => ((l.source.id || l.source) === d.id || (l.target.id || l.target) === d.id) ? 0.8 : 0.05)
+                .classed("highlighted", l => (l.source.id || l.source) === d.id || (l.target.id || l.target) === d.id);
 
-            // Labels
-            node.append("text")
-                .attr("class", "node-label")
-                .attr("dy", ".35em")
-                .text(d => d.id)
-                .style("font-size", d => `${Math.max(8, nodeSizes[d.type] / 3.5)}px`);
-
-            // Tooltip
-            const tooltip = document.getElementById('tooltip');
+            tooltip.innerHTML = `
+                <div class="tooltip-header">${d.id}</div>
+                <div class="tooltip-type">${d.type} • ${connections.length} Partnerships</div>
+                <div class="tooltip-grid">${connections.map(conn => {
+                    const partnerId = (conn.source.id || conn.source) === d.id ? (conn.target.id || conn.target) : (conn.source.id || conn.source);
+                    return `<div class="tooltip-item">
+                                <div>
+                                    <div class="tooltip-partner-name">${partnerId}</div>
+                                    <div class="tooltip-level">${conn.level}</div>
+                                </div>
+                                ${conn.award ? `<div class="tooltip-award">★ ${conn.award}</div>` : ''}
+                            </div>`;
+                }).join('')}</div>`;
             
-            // A function to hide the tooltip and reset styles
-            function hideTooltip() {
-                tooltip.classList.remove('visible');
-                svg.selectAll('.node').style("opacity", 1);
-                svg.selectAll('.link').style("opacity", 0.2).classed("highlighted", false);
-            }
+            tooltip.classList.add('visible');
+        }).on("mousemove", function(event) {
+            tooltip.style.left = `${event.pageX + 20}px`;
+            tooltip.style.top = `${event.pageY - 10}px`;
+        }).on("mouseout", () => setTimeout(() => { if (!tooltip.matches(':hover')) hideTooltip(); }, 300));
+        tooltip.addEventListener('mouseleave', hideTooltip);
 
-            // Interactions
-            node.on("mouseover", function(event, d) {
-                const connections = partnerships.filter(l => 
-                    (typeof l.source === 'object' ? l.source.id : l.source) === d.id || 
-                    (typeof l.target === 'object' ? l.target.id : l.target) === d.id
-                );
-                
-                const connectedIds = new Set([d.id]);
-                connections.forEach(l => {
-                    connectedIds.add(typeof l.source === 'object' ? l.source.id : l.source);
-                    connectedIds.add(typeof l.target === 'object' ? l.target.id : l.target);
-                });
-
-                node.style("opacity", n => connectedIds.has(n.id) ? 1 : 0.1);
-                link.style("opacity", l => {
-                    const sourceId = typeof l.source === 'object' ? l.source.id : l.source;
-                    const targetId = typeof l.target === 'object' ? l.target.id : l.target;
-                    return (sourceId === d.id || targetId === d.id) ? 0.8 : 0.05;
-                }).classed("highlighted", l => {
-                    const sourceId = typeof l.source === 'object' ? l.source.id : l.source;
-                    const targetId = typeof l.target === 'object' ? l.target.id : l.target;
-                    return sourceId === d.id || targetId === d.id;
-                });
-
-                let connectionsContent = '';
-                connections.forEach(conn => {
-                    const partnerId = (typeof conn.source === 'object' ? conn.source.id : conn.source) === d.id 
-                        ? (typeof conn.target === 'object' ? conn.target.id : conn.target)
-                        : (typeof conn.source === 'object' ? conn.source.id : conn.source);
-                    connectionsContent += `
-                        <div class="tooltip-item">
-                            <div>
-                                <div class="tooltip-partner-name">${partnerId}</div>
-                                <div class="tooltip-level">${conn.level}</div>
-                            </div>
-                            ${conn.award ? `<div class="tooltip-award">★ ${conn.award}</div>` : ''}
-                        </div>
-                    `;
-                });
-
-                let content = `
-                    <div class="tooltip-header">${d.id}</div>
-                    <div class="tooltip-type">${d.type} • ${connections.length} Partnerships</div>
-                    <div class="tooltip-grid">${connectionsContent}</div>
-                `;
-
-                tooltip.innerHTML = content;
-                tooltip.classList.add('visible');
-                tooltip.style.left = (event.pageX + 20) + 'px';
-                tooltip.style.top = (event.pageY - 10) + 'px';
-            })
-            .on("mousemove", function(event) {
-                tooltip.style.left = (event.pageX + 20) + 'px';
-                tooltip.style.top = (event.pageY - 10) + 'px';
-            })
-            .on("mouseout", function() {
-                setTimeout(() => {
-                    if (!tooltip.matches(':hover')) {
-                        hideTooltip();
-                    }
-                }, 300);
-            });
-            
-            tooltip.addEventListener('mouseleave', hideTooltip);
-
-
-            // Simulation tick
-            simulation.on("tick", () => {
-                link
-                    .attr("x1", d => d.source.x)
-                    .attr("y1", d => d.source.y)
-                    .attr("x2", d => d.target.x)
-                    .attr("y2", d => d.target.y);
-
-                node.attr("transform", d => `translate(${d.x},${d.y})`);
-            });
-
-            // Drag functions
-            function dragstarted(event, d) {
-                if (!event.active) simulation.alphaTarget(0.3).restart();
-                d.fx = d.x;
-                d.fy = d.y;
-            }
-
-            function dragged(event, d) {
-                d.fx = event.x;
-                d.fy = event.y;
-            }
-
-            function dragended(event, d) {
-                if (!event.active) simulation.alphaTarget(0);
-                d.fx = null;
-                d.fy = null;
-            }
-
-            // Legend
-            const legendContainer = document.getElementById('legend');
-            let activeFilter = null;
-
-            Object.entries(nodeColors).forEach(([type, color]) => {
-                const item = document.createElement('div');
-                item.className = 'legend-item';
-                item.innerHTML = `
-                    <div class="legend-dot" style="background: ${color}; color: ${color};"></div>
-                    <span class="legend-label">${type}</span>
-                `;
-                
-                item.onclick = () => {
-                    if (activeFilter === type) {
-                        activeFilter = null;
-                        node.style("opacity", 1);
-                        link.style("opacity", 0.2);
-                        item.classList.remove('active');
-                    } else {
-                        document.querySelectorAll('.legend-item').forEach(el => el.classList.remove('active'));
-                        item.classList.add('active');
-                        activeFilter = type;
-                        
-                        const filteredIds = new Set(firms.filter(f => f.type === type).map(f => f.id));
-                        
-                        node.style("opacity", n => filteredIds.has(n.id) ? 1 : 0.1);
-                        link.style("opacity", l => {
-                            const sourceId = typeof l.source === 'object' ? l.source.id : l.source;
-                            const targetId = typeof l.target === 'object' ? l.target.id : l.target;
-                            return (filteredIds.has(sourceId) || filteredIds.has(targetId)) ? 0.3 : 0.02;
-                        });
-                    }
-                };
-                
-                legendContainer.appendChild(item);
-            });
-
-            // Controls
-            let paused = false;
-            document.getElementById('pauseBtn').onclick = function() {
-                paused = !paused;
-                this.textContent = paused ? 'Resume' : 'Pause';
-                this.classList.toggle('active');
-                if (paused) {
-                    simulation.stop();
-                } else {
-                    simulation.alpha(0.3).restart();
-                }
-            };
-
-            document.getElementById('resetBtn').onclick = function() {
-                activeFilter = null;
-                node.style("opacity", 1);
-                link.style("opacity", 0.2);
-                document.querySelectorAll('.legend-item').forEach(el => el.classList.remove('active'));
-                simulation.alpha(1).restart();
-            };
-
-            let focusMode = false;
-            document.getElementById('focusBtn').onclick = function() {
-                focusMode = !focusMode;
-                this.classList.toggle('active');
-                const isMobile = window.innerWidth <= 1024;
-
-                document.querySelector('.header').style.display = focusMode ? 'none' : 'block';
-                // Only toggle side panel and stats if not on mobile
-                if (!isMobile) {
-                    document.querySelector('.side-panel').style.display = focusMode ? 'none' : 'flex';
-                    document.querySelector('.stats-bar').style.display = focusMode ? 'none' : 'flex';
-                }
-            };
-
+        // --- Simulation Tick ---
+        simulation.on("tick", () => {
+            link.attr("x1", d => d.source.x).attr("y1", d => d.source.y)
+                .attr("x2", d => d.target.x).attr("y2", d => d.target.y);
+            node.attr("transform", d => `translate(${d.x},${d.y})`);
         });
+
+        // --- Drag & Zoom Functions ---
+        function dragstarted(event, d) { if (!event.active) simulation.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; }
+        function dragged(event, d) { d.fx = event.x; d.fy = event.y; }
+        function dragended(event, d) { if (!event.active) simulation.alphaTarget(0); d.fx = null; d.fy = null; }
+
+        const zoom = d3.zoom().scaleExtent([0.3, 5]).on("zoom", (event) => g.attr("transform", event.transform));
+        svg.call(zoom);
+
+        // --- Legend & Filtering ---
+        const legendContainer = document.getElementById('legend');
+        let activeFilter = null;
+        Object.entries(nodeColors).forEach(([type, color]) => {
+            const item = document.createElement('div');
+            item.className = 'legend-item';
+            item.innerHTML = `<div class="legend-dot" style="background: ${color}; color: ${color};"></div><span class="legend-label">${type}</span>`;
+            item.onclick = () => {
+                document.querySelectorAll('.legend-item').forEach(el => el.classList.remove('active'));
+                if (activeFilter === type) {
+                    activeFilter = null;
+                    g.selectAll('.node').style("opacity", 1);
+                    g.selectAll('.link').style("opacity", 0.2);
+                } else {
+                    activeFilter = type;
+                    item.classList.add('active');
+                    const filteredIds = new Set(firms.filter(f => f.type === type).map(f => f.id));
+                    g.selectAll('.node').style("opacity", n => filteredIds.has(n.id) ? 1 : 0.1);
+                    g.selectAll('.link').style("opacity", l => (filteredIds.has(l.source.id || l.source) || filteredIds.has(l.target.id || l.target)) ? 0.3 : 0.02);
+                }
+            };
+            legendContainer.appendChild(item);
+        });
+
+        // --- Controls Logic ---
+        let paused = false;
+        document.getElementById('pauseBtn').onclick = function() {
+            paused = !paused;
+            this.textContent = paused ? 'Resume' : 'Pause';
+            this.classList.toggle('active');
+            if (paused) simulation.stop(); else simulation.alpha(0.3).restart();
+        };
+
+        document.getElementById('resetBtn').onclick = () => {
+            activeFilter = null;
+            g.selectAll('.node').style("opacity", 1);
+            g.selectAll('.link').style("opacity", 0.2);
+            document.querySelectorAll('.legend-item').forEach(el => el.classList.remove('active'));
+            svg.transition().duration(750).call(zoom.transform, d3.zoomIdentity); // Reset zoom
+            simulation.alpha(1).restart();
+        };
+
+        let focusMode = false;
+        document.getElementById('focusBtn').onclick = function() {
+            focusMode = !focusMode;
+            this.classList.toggle('active');
+            document.querySelector('.header').style.display = focusMode ? 'none' : 'block';
+            if (window.innerWidth > 1024) {
+                document.querySelector('.side-panel').style.display = focusMode ? 'none' : 'flex';
+                document.querySelector('.stats-bar').style.display = focusMode ? 'none' : 'flex';
+            }
+        };
+
+        // --- Responsive Resizing ---
+        window.addEventListener('resize', () => {
+            width = container.clientWidth;
+            height = container.clientHeight;
+            svg.attr("viewBox", [0, 0, width, height]);
+            simulation.force("center", d3.forceCenter(width / 2, height / 2));
+            simulation.alpha(0.3).restart();
+        });
+    });
     </script>
 </body>
 </html>
