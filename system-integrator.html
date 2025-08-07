@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Integrator Partner Ecosystem</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0d1117;
+            background-image: radial-gradient(circle at 1px 1px, #21262d 1px, transparent 0);
+            background-size: 20px 20px;
+        }
+        .title-font {
+            font-family: 'Orbitron', sans-serif;
+        }
+        #graph-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+        .node {
+            position: absolute;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 9999px;
+            color: white;
+            font-size: 10px;
+            font-weight: 600;
+            text-align: center;
+            box-shadow: 0 0 12px 2px var(--glow-color-transparent), inset 0 0 8px 1px var(--glow-color-transparent);
+            border: 2px solid var(--glow-color);
+            padding: 4px;
+            cursor: pointer;
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out, opacity 0.3s;
+            animation: pulse 3s infinite ease-in-out;
+        }
+        .link {
+            stroke-opacity: 0.3;
+            stroke-width: 1.5px;
+            transition: stroke-opacity 0.3s;
+            stroke-dasharray: 10 5;
+            animation: dash 40s linear infinite;
+        }
+        @keyframes dash {
+            to {
+                stroke-dashoffset: 1000;
+            }
+        }
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+                box-shadow: 0 0 12px 2px var(--glow-color-transparent), inset 0 0 8px 1px var(--glow-color-transparent);
+            }
+            50% {
+                transform: scale(1.05);
+                box-shadow: 0 0 20px 5px var(--glow-color-transparent), inset 0 0 12px 3px var(--glow-color-transparent);
+            }
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            margin-right: 12px;
+            border: 2px solid var(--glow-color);
+            box-shadow: 0 0 8px 1px var(--glow-color-transparent);
+        }
+        #tooltip {
+            position: absolute;
+            display: none;
+            padding: 12px;
+            background-color: rgba(17, 24, 39, 0.9);
+            color: white;
+            border-radius: 8px;
+            pointer-events: none;
+            font-size: 12px;
+            z-index: 100;
+            max-width: 300px;
+            border: 1px solid #30363d;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.4);
+            backdrop-filter: blur(5px);
+            transition: opacity 0.2s;
+        }
+        .tooltip-title {
+            font-weight: 700;
+            font-size: 14px;
+            margin-bottom: 8px;
+            color: var(--glow-color);
+            text-shadow: 0 0 5px var(--glow-color-transparent);
+        }
+        .tooltip-partner-type {
+            color: #8b949e; /* gray-400 dark */
+            font-style: italic;
+            margin-right: 6px;
+        }
+         .tooltip-award {
+            color: #f0b90b; /* brighter gold */
+            font-weight: 600;
+            text-shadow: 0 0 4px #f0b90b55;
+        }
+    </style>
+</head>
+<body class="text-gray-200">
+
+    <div class="container mx-auto p-4 md:p-8">
+        <div class="bg-black bg-opacity-40 backdrop-blur-md rounded-lg shadow-2xl border border-gray-800 p-6 md:p-8">
+            <div class="text-center mb-8">
+                <h1 class="text-3xl md:text-4xl font-bold text-white title-font tracking-wider">Partner Ecosystem</h1>
+                <p class="text-gray-400 mt-2">A visual map of strategic alliances. Hover to isolate connections.</p>
+            </div>
+
+            <div class="flex flex-wrap md:flex-nowrap gap-8">
+                <!-- Legend -->
+                <div class="w-full md:w-1/4 md:pr-8">
+                    <h2 class="text-xl font-semibold mb-4 text-gray-300 title-font">Classification</h2>
+                    <div id="legend"></div>
+                     <p class="text-xs text-gray-500 mt-8">
+                        Data sourced from "The 2025 System Integrator and Consulting Partner Landscape" report.
+                    </p>
+                </div>
+
+                <!-- Graph -->
+                <div class="w-full md:w-3/4 h-[600px] md:h-[800px] bg-black bg-opacity-20 rounded-lg overflow-hidden border border-gray-800">
+                    <div id="graph-container">
+                        <svg id="svg-links" class="absolute top-0 left-0 w-full h-full"></svg>
+                        <div id="html-nodes" class="absolute top-0 left-0 w-full h-full"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="tooltip"></div>
+
+    <script>
+        // --- DATA ---
+        const firms = [
+            { id: 'Accenture', type: 'GSI' }, { id: 'TCS', type: 'GSI' }, { id: 'Capgemini', type: 'GSI' }, { id: 'Infosys', type: 'GSI' }, { id: 'Wipro', type: 'GSI' }, { id: 'Cognizant', type: 'GSI' }, { id: 'HCLTech', type: 'GSI' },
+            { id: 'Deloitte', type: 'Advisory-Led' }, { id: 'PwC', type: 'Advisory-Led' }, { id: 'EY', type: 'Advisory-Led' }, { id: 'KPMG', type: 'Advisory-Led' }, { id: 'Crowe', type: 'Advisory-Led' }, { id: 'RSM', type: 'Advisory-Led' }, { id: 'Grant Thornton', type: 'Advisory-Led' },
+            { id: 'Slalom', type: 'Modern Consultancy' },
+            { id: 'RoviSys', type: 'Industrial/OT' }, { id: 'Andritz', type: 'Industrial/OT' },
+            { id: 'Microsoft', type: 'Tech Vendor' }, { id: 'AWS', type: 'Tech Vendor' }, { id: 'Google Cloud', type: 'Tech Vendor' }, { id: 'Salesforce', type: 'Tech Vendor' }, { id: 'SAP', type: 'Tech Vendor' }, { id: 'Oracle', type: 'Tech Vendor' }, { id: 'ServiceNow', type: 'Tech Vendor' }, { id: 'Snowflake', type: 'Tech Vendor' }, { id: 'Databricks', type: 'Tech Vendor' },
+            { id: 'IBM', type: 'Tech Vendor' }, { id: 'Palo Alto Networks', type: 'Tech Vendor' }
+        ];
+
+        const partnerships = [
+            { source: 'Accenture', target: 'Microsoft', level: 'Premier Partner', award: 'Global SI POY (19x)' }, { source: 'Accenture', target: 'AWS', level: 'Premier Partner', award: 'Top Partner (GenAI)' }, { source: 'Accenture', target: 'Google Cloud', level: 'Global Services Partner', award: 'Global Services POY' }, { source: 'Accenture', target: 'Salesforce', level: 'Leader' }, { source: 'Accenture', target: 'SAP', level: 'Pinnacle Partner', award: 'Pinnacle Award' }, { source: 'Accenture', target: 'Oracle', level: 'Premier Partner' }, { source: 'Accenture', target: 'ServiceNow', level: 'Premier Partner' }, { source: 'Accenture', target: 'Snowflake', level: 'Premier Partner' }, { source: 'Accenture', target: 'Databricks', level: 'Global Partner', award: 'Global POY' },
+            { source: 'Deloitte', target: 'AWS', level: 'Premier Consulting Partner', award: 'Global GenAI & Security POY' }, { source: 'Deloitte', target: 'Google Cloud', level: 'Premier Services Partner', award: 'Global Industry POY' }, { source: 'Deloitte', target: 'Salesforce', level: 'Global Partner', award: 'Partner Innovation Award (10x)' }, { source: 'Deloitte', target: 'SAP', level: 'Pinnacle Partner', award: 'Pinnacle Award (3x)' }, { source: 'Deloitte', target: 'Oracle', level: 'Global Partner', award: 'Global NetSuite POY' }, { source: 'Deloitte', target: 'ServiceNow', level: 'Global Elite Partner', award: 'Global POY' }, { source: 'Deloitte', target: 'Snowflake', level: 'Global SI Partner' }, { source: 'Deloitte', target: 'Databricks', level: 'Strategic Partner' }, { source: 'Deloitte', target: 'Microsoft', level: 'Premier Partner' }, { source: 'Deloitte', target: 'RoviSys', level: 'Technology Partner'},
+            { source: 'PwC', target: 'Microsoft', level: 'Global Partner', award: 'Global Building with AI POY' }, { source: 'PwC', target: 'Google Cloud', level: 'Premier Partner' }, { source: 'PwC', target: 'Salesforce', level: 'Strategic Alliance', award: 'Partner Innovation Award' }, { source: 'PwC', target: 'SAP', level: 'Validated Partner', award: 'Partner Paragon Winner' }, { source: 'PwC', target: 'Oracle', level: 'Strategic Alliance' }, { source: 'PwC', target: 'AWS', level: 'Premier Partner' },
+            { source: 'KPMG', target: 'Microsoft', level: 'Global Advisory Finalist' }, { source: 'KPMG', target: 'Google Cloud', level: 'DEI Partner', award: 'Global DEI POY' }, { source: 'KPMG', target: 'SAP', level: 'Cloud Partner' }, { source: 'KPMG', target: 'ServiceNow', level: 'Global Elite Partner', award: 'Worldwide Transformation POY' }, { source: 'KPMG', target: 'Snowflake', level: 'Data Alliance' }, { source: 'KPMG', target: 'Databricks', level: 'Data Alliance' },
+            { source: 'EY', target: 'Microsoft', level: 'Global Advisory Partner', award: 'Global Advisory POY (4x)' }, { source: 'EY', target: 'SAP', level: 'Pinnacle Partner', award: 'Pinnacle Award (15x)' }, { source: 'EY', target: 'ServiceNow', level: 'Global Alliance Leader' }, { source: 'EY', target: 'Snowflake', level: 'Global Alliance GTM Lead' },
+            { source: 'Capgemini', target: 'Microsoft', level: 'Global Partner' }, { source: 'Capgemini', target: 'AWS', level: 'Premier GSI Partner', award: 'Global Sustainability POY' }, { source: 'Capgemini', target: 'Google Cloud', level: 'Global Industry Partner', award: 'Global Industry POY (GenAI)' }, { source: 'Capgemini', target: 'Salesforce', level: 'Strategic Alliance' }, { source: 'Capgemini', target: 'SAP', level: 'Pinnacle Partner' },
+            { source: 'TCS', target: 'Microsoft', level: 'Strategic Partner' }, { source: 'TCS', target: 'AWS', level: 'Strategic Partner' }, { source: 'TCS', target: 'Google Cloud', level: 'Strategic Partner' }, { source: 'TCS', target: 'Salesforce', level: 'Technology Partner' }, { source: 'TCS', target: 'SAP', level: 'Technology Partner' }, { source: 'TCS', target: 'Oracle', level: 'Premier Sponsor' }, { source: 'TCS', target: 'ServiceNow', level: 'Technology Partner' },
+            { source: 'Infosys', target: 'Microsoft', level: 'Gold Partner' }, { source: 'Infosys', target: 'AWS', level: 'Premier Partner' }, { source: 'Infosys', target: 'Google Cloud', level: 'Specialization Partner' }, { source: 'Infosys', target: 'SAP', level: 'Strategic Partner' }, { source: 'Infosys', target: 'Oracle', level: 'Global Innovation Partner', award: 'Global Innovation POY' },
+            { source: 'Wipro', target: 'Microsoft', level: 'Solutions Partner' }, { source: 'Wipro', target: 'Databricks', level: 'Innovation Partner', award: 'Innovation POY' }, { source: 'Wipro', target: 'AWS', level: 'Premier Partner' },
+            { source: 'Slalom', target: 'AWS', level: 'Premier Tier Services Partner', award: 'Global GenAI Consulting POY' }, { source: 'Slalom', target: 'Google Cloud', level: 'Premier Partner' }, { source: 'Slalom', target: 'Salesforce', level: 'Crest Partner' }, { source: 'Slalom', target: 'Snowflake', level: 'GSI Partner' }, { source: 'Slalom', target: 'Databricks', level: 'Strategic Partner' }, { source: 'Slalom', target: 'Microsoft', level: 'Solutions Partner' },
+            { source: 'Crowe', target: 'Microsoft', level: 'Inner Circle Partner', award: 'Inner Circle Award' }, { source: 'Crowe', target: 'Oracle', level: 'Solution Provider' }, { source: 'Crowe', target: 'Salesforce', level: 'Strategic Alliance' }, { source: 'Crowe', target: 'ServiceNow', level: 'Strategic Alliance' },
+            { source: 'RSM', target: 'Microsoft', level: 'Solutions Partner' }, { source: 'RSM', target: 'Oracle', level: 'Global Solution Provider', award: 'Worldwide NetSuite POY' }, { source: 'RSM', target: 'Salesforce', level: 'Strategic Alliance' }, { source: 'RSM', target: 'ServiceNow', level: 'Strategic Alliance' },
+            { source: 'Grant Thornton', target: 'Microsoft', level: 'Gold Partner' }, { source: 'Grant Thornton', target: 'Oracle', level: 'Platinum, Cloud Premier Partner' }, { source: 'Grant Thornton', target: 'ServiceNow', level: 'Strategic Alliance' },
+            { source: 'Andritz', target: 'SAP', level: 'Industrial Partner' },
+            { source: 'Cognizant', target: 'AWS', level: 'Premier Partner' }, { source: 'Cognizant', target: 'Google Cloud', level: 'Specialization Partner', award: 'Data Management POY' }, { source: 'Cognizant', target: 'Microsoft', level: 'Finalist', award: 'Global SI POY Finalist (2021)' }, { source: 'Cognizant', target: 'Palo Alto Networks', level: 'Partner' },
+            { source: 'HCLTech', target: 'Google Cloud', level: 'Partner' }, { source: 'HCLTech', target: 'IBM', level: 'Strategic Partner' }, { source: 'HCLTech', target: 'Palo Alto Networks', level: 'Partner' }, { source: 'HCLTech', target: 'Microsoft', level: 'Award Winner', award: 'AI Customer Exp. POY (2024)' }
+        ];
+
+        // --- CONFIGURATION ---
+        const nodeColors = {
+            'GSI': { hex: '#0ea5e9', transparent: '#0ea5e933', bg: 'bg-sky-500' },
+            'Advisory-Led': { hex: '#a855f7', transparent: '#a855f733', bg: 'bg-purple-500' },
+            'Modern Consultancy': { hex: '#ec4899', transparent: '#ec489933', bg: 'bg-pink-500' },
+            'Industrial/OT': { hex: '#22c55e', transparent: '#22c55e33', bg: 'bg-green-500' },
+            'Tech Vendor': { hex: '#f97316', transparent: '#f9731633', bg: 'bg-orange-500' },
+        };
+        const nodeSizes = {
+            'GSI': 80, 'Advisory-Led': 70, 'Modern Consultancy': 65,
+            'Industrial/OT': 60, 'Tech Vendor': 90,
+        };
+
+        const container = document.getElementById('graph-container');
+        const width = container.clientWidth;
+        const height = container.clientHeight;
+        const tooltip = d3.select("#tooltip");
+
+        // --- D3 Simulation ---
+        const simulation = d3.forceSimulation(firms)
+            .force("link", d3.forceLink(partnerships).id(d => d.id).distance(110).strength(0.7))
+            .force("charge", d3.forceManyBody().strength(-350))
+            .force("center", d3.forceCenter(width / 2, height / 2))
+            .force("x", d3.forceX(width / 2).strength(0.05)) // Gently pull nodes to the horizontal center
+            .force("y", d3.forceY(height / 2).strength(0.05)) // Gently pull nodes to the vertical center
+            .force("collide", d3.forceCollide().radius(d => (nodeSizes[d.type] / 2) + 15).strength(1));
+
+        // --- Render Graph ---
+        const svg = d3.select("#svg-links");
+        const nodesContainer = d3.select("#html-nodes");
+
+        simulation.stop();
+        for (let i = 0; i < 300; ++i) simulation.tick();
+
+        const link = svg.append("g")
+            .selectAll("line")
+            .data(partnerships)
+            .join("line")
+            .attr("class", "link")
+            .style("stroke", d => nodeColors[d.source.type].hex)
+            .attr("x1", d => d.source.x)
+            .attr("y1", d => d.source.y)
+            .attr("x2", d => d.target.x)
+            .attr("y2", d => d.target.y);
+
+        const node = nodesContainer.selectAll("div")
+            .data(firms)
+            .join("div")
+            .attr("class", d => `node ${nodeColors[d.type].bg}`)
+            .style("--glow-color", d => nodeColors[d.type].hex)
+            .style("--glow-color-transparent", d => nodeColors[d.type].transparent)
+            .style("width", d => `${nodeSizes[d.type]}px`)
+            .style("height", d => `${nodeSizes[d.type]}px`)
+            .style("left", d => `${d.x - nodeSizes[d.type] / 2}px`)
+            .style("top", d => `${d.y - nodeSizes[d.type] / 2}px`)
+            .text(d => d.id);
+        
+        // --- Interactivity ---
+        node.on("mouseover", (event, d) => {
+            const connectedLinks = partnerships.filter(l => l.source.id === d.id || l.target.id === d.id);
+            const connectedNodeIds = new Set([d.id]);
+            connectedLinks.forEach(l => {
+                connectedNodeIds.add(l.source.id);
+                connectedNodeIds.add(l.target.id);
+            });
+
+            node.style("opacity", n => connectedNodeIds.has(n.id) ? 1 : 0.1);
+            link.style("stroke-opacity", l => (l.source.id === d.id || l.target.id === d.id) ? 0.7 : 0.05);
+
+            tooltip.style("display", "block").style("opacity", 1)
+                   .style("--glow-color", nodeColors[d.type].hex)
+                   .style("--glow-color-transparent", nodeColors[d.type].transparent);
+            
+            let partnersHtml = '<ul class="space-y-1">';
+            connectedLinks.forEach(link => {
+                const partnerNode = link.source.id === d.id ? link.target.id : link.source.id;
+                partnersHtml += `<li><span class="tooltip-partner-type">${link.level || 'Partner'}:</span> <strong>${partnerNode}</strong>${link.award ? ` <span class="tooltip-award">(${link.award})</span>` : ''}</li>`;
+            });
+            partnersHtml += '</ul>';
+            tooltip.html(`<div class="tooltip-title">${d.id}</div>${partnersHtml}`);
+
+        }).on("mousemove", (event) => {
+            tooltip.style("left", (event.pageX + 15) + "px")
+                   .style("top", (event.pageY + 15) + "px");
+        }).on("mouseout", () => {
+            node.style("opacity", 1);
+            link.style("stroke-opacity", 0.3);
+            tooltip.style("display", "none").style("opacity", 0);
+        });
+        
+        // --- Render Legend ---
+        const legendContainer = document.getElementById('legend');
+        Object.keys(nodeColors).forEach(type => {
+            const legendEl = document.createElement('div');
+            legendEl.className = 'legend-item';
+            legendEl.innerHTML = `
+                <div class="legend-color" style="--glow-color: ${nodeColors[type].hex}; --glow-color-transparent: ${nodeColors[type].transparent}; background-color: ${nodeColors[type].hex};"></div>
+                <span class="text-sm text-gray-400">${type}</span>
+            `;
+            legendContainer.appendChild(legendEl);
+        });
+
+    </script>
+</body>
+</html>
