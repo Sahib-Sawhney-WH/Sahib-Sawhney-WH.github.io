@@ -3,275 +3,1056 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>System Integrator Partner Ecosystem</title>
+    <title>Partner Ecosystem Intelligence | 2025</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://d3js.org/d3.v7.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            cursor: none;
+        }
+
+        :root {
+            --primary-glow: #00ffcc;
+            --secondary-glow: #7c3aed;
+            --accent-glow: #ff006e;
+        }
+        
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: #0d1117;
-            background-image: radial-gradient(circle at 1px 1px, #21262d 1px, transparent 0);
-            background-size: 20px 20px;
-        }
-        .title-font {
-            font-family: 'Orbitron', sans-serif;
-        }
-        #graph-container {
+            font-family: 'Space Mono', monospace;
+            background: #000000;
+            overflow: hidden;
             position: relative;
+            height: 100vh;
+        }
+
+        /* Custom cursor */
+        .cursor {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--primary-glow);
+            border-radius: 50%;
+            position: fixed;
+            pointer-events: none;
+            z-index: 9999;
+            transition: all 0.1s ease;
+            mix-blend-mode: difference;
+        }
+
+        .cursor-follower {
+            width: 8px;
+            height: 8px;
+            background: var(--primary-glow);
+            border-radius: 50%;
+            position: fixed;
+            pointer-events: none;
+            z-index: 9998;
+            transition: all 0.3s ease;
+        }
+
+        /* Animated background particles */
+        #particles-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
             width: 100%;
             height: 100%;
+            z-index: 0;
         }
-        .node {
-            position: absolute;
+
+        /* Main container */
+        .main-wrapper {
+            position: relative;
+            z-index: 10;
+            height: 100vh;
             display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 9999px;
-            color: white;
-            font-size: 10px;
-            font-weight: 600;
+            flex-direction: column;
+        }
+
+        /* Header styling */
+        .header {
+            padding: 2rem;
             text-align: center;
-            box-shadow: 0 0 12px 2px var(--glow-color-transparent), inset 0 0 8px 1px var(--glow-color-transparent);
-            border: 2px solid var(--glow-color);
-            padding: 4px;
-            cursor: pointer;
-            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out, opacity 0.3s;
-            animation: pulse 3s infinite ease-in-out;
+            position: relative;
+            z-index: 100;
+            background: linear-gradient(180deg, rgba(0,0,0,0.9) 0%, transparent 100%);
         }
-        .link {
-            stroke-opacity: 0.3;
-            stroke-width: 1.5px;
-            transition: stroke-opacity 0.3s;
-            stroke-dasharray: 10 5;
-            animation: dash 40s linear infinite;
+
+        .main-title {
+            font-family: 'Syne', sans-serif;
+            font-size: clamp(2rem, 5vw, 4rem);
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            background: linear-gradient(90deg, #fff 0%, var(--primary-glow) 50%, #fff 100%);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: shimmer 3s linear infinite;
+            margin-bottom: 0.5rem;
         }
-        @keyframes dash {
+
+        @keyframes shimmer {
             to {
-                stroke-dashoffset: 1000;
+                background-position: 200% center;
             }
         }
-        @keyframes pulse {
-            0%, 100% {
-                transform: scale(1);
-                box-shadow: 0 0 12px 2px var(--glow-color-transparent), inset 0 0 8px 1px var(--glow-color-transparent);
+
+        .subtitle {
+            font-size: 0.875rem;
+            color: #666;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            animation: fadeInUp 1s ease;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
             }
-            50% {
-                transform: scale(1.05);
-                box-shadow: 0 0 20px 5px var(--glow-color-transparent), inset 0 0 12px 3px var(--glow-color-transparent);
+            to {
+                opacity: 1;
+                transform: translateY(0);
             }
         }
+
+        /* Stats bar */
+        .stats-bar {
+            position: absolute;
+            top: 2rem;
+            right: 2rem;
+            display: flex;
+            gap: 2rem;
+            z-index: 100;
+        }
+
+        .stat-item {
+            text-align: right;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-glow);
+            text-shadow: 0 0 20px currentColor;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        /* Main content area */
+        .content-wrapper {
+            flex: 1;
+            display: flex;
+            position: relative;
+            padding: 0 2rem 2rem;
+        }
+
+        /* Side panel */
+        .side-panel {
+            width: 300px;
+            padding-right: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .panel-section {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 1.5rem;
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .panel-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--primary-glow), transparent);
+            animation: scan 3s linear infinite;
+        }
+
+        @keyframes scan {
+            from {
+                transform: translateX(-100%);
+            }
+            to {
+                transform: translateX(100%);
+            }
+        }
+
+        .panel-title {
+            font-family: 'Syne', sans-serif;
+            font-size: 0.875rem;
+            font-weight: 700;
+            color: var(--primary-glow);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 1rem;
+        }
+
+        /* Legend items */
         .legend-item {
             display: flex;
             align-items: center;
-            margin-bottom: 8px;
+            padding: 0.5rem;
+            margin-bottom: 0.5rem;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
         }
-        .legend-color {
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            margin-right: 12px;
-            border: 2px solid var(--glow-color);
-            box-shadow: 0 0 8px 1px var(--glow-color-transparent);
+
+        .legend-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            transform: translateX(5px);
         }
-        #tooltip {
+
+        .legend-item.active {
+            background: rgba(0, 255, 204, 0.1);
+        }
+
+        .legend-item.active::after {
+            content: '';
             position: absolute;
-            display: none;
-            padding: 12px;
-            background-color: rgba(17, 24, 39, 0.9);
-            color: white;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 2px;
+            height: 60%;
+            background: var(--primary-glow);
+            box-shadow: 0 0 10px var(--primary-glow);
+        }
+
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 1rem;
+            position: relative;
+            box-shadow: 0 0 20px currentColor;
+        }
+
+        .legend-dot::after {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border-radius: 50%;
+            border: 1px solid currentColor;
+            opacity: 0.5;
+            animation: pulse-ring 2s linear infinite;
+        }
+
+        @keyframes pulse-ring {
+            0% {
+                transform: scale(1);
+                opacity: 0.5;
+            }
+            100% {
+                transform: scale(1.5);
+                opacity: 0;
+            }
+        }
+
+        .legend-label {
+            font-size: 0.875rem;
+            color: #999;
+        }
+
+        /* Graph container */
+        .graph-wrapper {
+            flex: 1;
+            position: relative;
             border-radius: 8px;
-            pointer-events: none;
-            font-size: 12px;
-            z-index: 100;
-            max-width: 300px;
-            border: 1px solid #30363d;
-            box-shadow: 0 8px 16px rgba(0,0,0,0.4);
-            backdrop-filter: blur(5px);
-            transition: opacity 0.2s;
+            overflow: hidden;
+            background: radial-gradient(circle at 50% 50%, rgba(0, 255, 204, 0.03) 0%, transparent 50%);
         }
-        .tooltip-title {
-            font-weight: 700;
-            font-size: 14px;
-            margin-bottom: 8px;
-            color: var(--glow-color);
-            text-shadow: 0 0 5px var(--glow-color-transparent);
+
+        #graph-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
         }
-        .tooltip-partner-type {
-            color: #8b949e; /* gray-400 dark */
-            font-style: italic;
-            margin-right: 6px;
+
+        /* SVG styles */
+        .node {
+            cursor: pointer;
+            transition: all 0.3s ease;
         }
-         .tooltip-award {
-            color: #f0b90b; /* brighter gold */
+
+        .node-circle {
+            fill: rgba(0, 0, 0, 0.8);
+            stroke-width: 2;
+            filter: drop-shadow(0 0 20px currentColor);
+            transition: all 0.3s ease;
+        }
+
+        .node-circle:hover {
+            filter: drop-shadow(0 0 40px currentColor);
+        }
+
+        .node-pulse {
+            fill: none;
+            stroke-width: 1;
+            opacity: 0;
+            animation: node-pulse 2s ease-out infinite;
+        }
+
+        @keyframes node-pulse {
+            0% {
+                r: 0;
+                opacity: 1;
+            }
+            100% {
+                r: 40;
+                opacity: 0;
+            }
+        }
+
+        .node-label {
+            fill: white;
+            font-size: 10px;
             font-weight: 600;
-            text-shadow: 0 0 4px #f0b90b55;
+            text-anchor: middle;
+            pointer-events: none;
+            opacity: 0.9;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .link {
+            stroke-width: 1;
+            opacity: 0.2;
+            stroke-dasharray: 2 4;
+            animation: dash-flow 30s linear infinite;
+        }
+
+        @keyframes dash-flow {
+            to {
+                stroke-dashoffset: -100;
+            }
+        }
+
+        .link.highlighted {
+            stroke-width: 2;
+            opacity: 0.8;
+            filter: drop-shadow(0 0 10px currentColor);
+            animation: dash-flow 5s linear infinite;
+        }
+
+        /* Tooltip */
+        .tooltip {
+            position: absolute;
+            padding: 0.75rem;
+            background: rgba(10, 10, 10, 0.9);
+            border: 1px solid rgba(0, 255, 204, 0.3);
+            border-radius: 6px;
+            /* Allow pointer events for scrolling */
+            pointer-events: auto; 
+            z-index: 1000;
+            max-width: 500px;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            backdrop-filter: blur(12px);
+        }
+
+        .tooltip.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .tooltip-header {
+            font-family: 'Syne', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--primary-glow);
+            margin-bottom: 0.25rem;
+            text-transform: uppercase;
+        }
+
+        .tooltip-type {
+            font-size: 0.7rem;
+            color: #777;
+            margin-bottom: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+        
+        .tooltip-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+            max-height: 220px; /* Set max height for scroll */
+            overflow-y: auto; /* Enable vertical scroll */
+            padding-right: 8px; /* Space for scrollbar */
+        }
+
+        /* Custom scrollbar for tooltip grid */
+        .tooltip-grid::-webkit-scrollbar {
+            width: 4px;
+        }
+        .tooltip-grid::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 2px;
+        }
+        .tooltip-grid::-webkit-scrollbar-thumb {
+            background-color: var(--primary-glow);
+            border-radius: 2px;
+        }
+
+
+        .tooltip-item {
+            padding: 0.5rem;
+            background: rgba(255, 255, 255, 0.03);
+            border-left: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 60px;
+            transition: all 0.2s ease-in-out;
+        }
+        
+        .tooltip-item:hover {
+            transform: translateY(-2px);
+            background: rgba(0, 255, 204, 0.08);
+            border-left-color: var(--primary-glow);
+        }
+
+        .tooltip-partner-name {
+            font-weight: 700;
+            color: #eee;
+            font-size: 0.75rem;
+        }
+
+        .tooltip-level {
+            color: #888;
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            margin-top: 2px;
+        }
+
+        .tooltip-award {
+            color: #ffd700;
+            font-size: 0.65rem;
+            font-weight: 600;
+            margin-top: auto;
+            padding-top: 0.3rem;
+        }
+
+        /* Control buttons */
+        .controls {
+            position: absolute;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 1rem;
+            z-index: 100;
+        }
+
+        .control-btn {
+            padding: 0.75rem 1.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            color: #999;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .control-btn:hover {
+            background: rgba(0, 255, 204, 0.1);
+            border-color: var(--primary-glow);
+            color: var(--primary-glow);
+            transform: translateY(-2px);
+        }
+
+        .control-btn.active {
+            background: var(--primary-glow);
+            color: #000;
+            font-weight: 700;
+        }
+
+        /* Loading screen */
+        .loading-screen {
+            position: fixed;
+            inset: 0;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            animation: fadeOut 0.5s ease 1.5s forwards;
+        }
+
+        .loading-text {
+            font-family: 'Syne', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-glow);
+            animation: glitch 1s linear infinite;
+        }
+
+        @keyframes glitch {
+            0%, 100% {
+                text-shadow: 0 0 5px var(--primary-glow);
+            }
+            25% {
+                text-shadow: -2px 0 #ff006e, 2px 0 #00ffcc;
+            }
+            50% {
+                text-shadow: 2px 0 #7c3aed, -2px 0 #00ffcc;
+            }
+            75% {
+                text-shadow: 0 0 10px var(--primary-glow);
+            }
+        }
+
+        @keyframes fadeOut {
+            to {
+                opacity: 0;
+                pointer-events: none;
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .side-panel { display: none; }
+            .stats-bar { display: none; }
+            .tooltip-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 768px) {
+            .tooltip { max-width: 320px; }
+            .tooltip-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
-<body class="text-gray-200">
+<body>
+    <!-- Custom cursor -->
+    <div class="cursor"></div>
+    <div class="cursor-follower"></div>
 
-    <div class="container mx-auto p-4 md:p-8">
-        <div class="bg-black bg-opacity-40 backdrop-blur-md rounded-lg shadow-2xl border border-gray-800 p-6 md:p-8">
-            <div class="text-center mb-8">
-                <h1 class="text-3xl md:text-4xl font-bold text-white title-font tracking-wider">Partner Ecosystem</h1>
-                <p class="text-gray-400 mt-2">A visual map of strategic alliances. Hover to isolate connections.</p>
+    <!-- Loading screen -->
+    <div class="loading-screen">
+        <div class="loading-text">INITIALIZING NEURAL NETWORK</div>
+    </div>
+
+    <!-- Particle background -->
+    <canvas id="particles-canvas"></canvas>
+
+    <!-- Main wrapper -->
+    <div class="main-wrapper">
+        <!-- Header -->
+        <div class="header">
+            <h1 class="main-title">PARTNER ECOSYSTEM</h1>
+            <p class="subtitle">Strategic Alliance Intelligence • 2025</p>
+        </div>
+
+        <!-- Stats bar -->
+        <div class="stats-bar">
+            <div class="stat-item">
+                <div class="stat-value">29</div>
+                <div class="stat-label">Partners</div>
             </div>
+            <div class="stat-item">
+                <div class="stat-value">73</div>
+                <div class="stat-label">Alliances</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">87%</div>
+                <div class="stat-label">Density</div>
+            </div>
+        </div>
 
-            <div class="flex flex-wrap md:flex-nowrap gap-8">
-                <!-- Legend -->
-                <div class="w-full md:w-1/4 md:pr-8">
-                    <h2 class="text-xl font-semibold mb-4 text-gray-300 title-font">Classification</h2>
+        <!-- Content wrapper -->
+        <div class="content-wrapper">
+            <!-- Side panel -->
+            <div class="side-panel">
+                <div class="panel-section">
+                    <h3 class="panel-title">Classification</h3>
                     <div id="legend"></div>
-                     <p class="text-xs text-gray-500 mt-8">
-                        Data sourced from "The 2025 System Integrator and Consulting Partner Landscape" report.
-                    </p>
                 </div>
-
-                <!-- Graph -->
-                <div class="w-full md:w-3/4 h-[600px] md:h-[800px] bg-black bg-opacity-20 rounded-lg overflow-hidden border border-gray-800">
-                    <div id="graph-container">
-                        <svg id="svg-links" class="absolute top-0 left-0 w-full h-full"></svg>
-                        <div id="html-nodes" class="absolute top-0 left-0 w-full h-full"></div>
+                <div class="panel-section">
+                    <h3 class="panel-title">Intelligence</h3>
+                    <div style="color: #666; font-size: 0.75rem; line-height: 1.6;">
+                        <div style="margin-bottom: 0.5rem;">
+                            <span style="color: var(--primary-glow);">▶</span> Real-time network analysis
+                        </div>
+                        <div style="margin-bottom: 0.5rem;">
+                            <span style="color: var(--primary-glow);">▶</span> 19 award-winning partnerships
+                        </div>
+                        <div style="margin-bottom: 0.5rem;">
+                            <span style="color: var(--primary-glow);">▶</span> Hover to explore connections
+                        </div>
+                        <div>
+                            <span style="color: var(--primary-glow);">▶</span> Click legend to filter
+                        </div>
                     </div>
                 </div>
             </div>
+
+            <!-- Graph wrapper -->
+            <div class="graph-wrapper">
+                <div id="graph-container">
+                    <svg id="main-svg" width="100%" height="100%"></svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls">
+            <button class="control-btn" id="pauseBtn">Pause</button>
+            <button class="control-btn" id="resetBtn">Reset</button>
+            <button class="control-btn" id="focusBtn">Focus Mode</button>
         </div>
     </div>
-    <div id="tooltip"></div>
+
+    <!-- Tooltip -->
+    <div class="tooltip" id="tooltip"></div>
 
     <script>
-        // --- DATA ---
-        const firms = [
-            { id: 'Accenture', type: 'GSI' }, { id: 'TCS', type: 'GSI' }, { id: 'Capgemini', type: 'GSI' }, { id: 'Infosys', type: 'GSI' }, { id: 'Wipro', type: 'GSI' }, { id: 'Cognizant', type: 'GSI' }, { id: 'HCLTech', type: 'GSI' },
-            { id: 'Deloitte', type: 'Advisory-Led' }, { id: 'PwC', type: 'Advisory-Led' }, { id: 'EY', type: 'Advisory-Led' }, { id: 'KPMG', type: 'Advisory-Led' }, { id: 'Crowe', type: 'Advisory-Led' }, { id: 'RSM', type: 'Advisory-Led' }, { id: 'Grant Thornton', type: 'Advisory-Led' },
-            { id: 'Slalom', type: 'Modern Consultancy' },
-            { id: 'RoviSys', type: 'Industrial/OT' }, { id: 'Andritz', type: 'Industrial/OT' },
-            { id: 'Microsoft', type: 'Tech Vendor' }, { id: 'AWS', type: 'Tech Vendor' }, { id: 'Google Cloud', type: 'Tech Vendor' }, { id: 'Salesforce', type: 'Tech Vendor' }, { id: 'SAP', type: 'Tech Vendor' }, { id: 'Oracle', type: 'Tech Vendor' }, { id: 'ServiceNow', type: 'Tech Vendor' }, { id: 'Snowflake', type: 'Tech Vendor' }, { id: 'Databricks', type: 'Tech Vendor' },
-            { id: 'IBM', type: 'Tech Vendor' }, { id: 'Palo Alto Networks', type: 'Tech Vendor' }
-        ];
+        // Custom cursor
+        document.addEventListener('mousemove', (e) => {
+            const cursor = document.querySelector('.cursor');
+            const follower = document.querySelector('.cursor-follower');
+            cursor.style.left = e.clientX - 10 + 'px';
+            cursor.style.top = e.clientY - 10 + 'px';
+            follower.style.left = e.clientX - 4 + 'px';
+            follower.style.top = e.clientY - 4 + 'px';
+        });
 
-        const partnerships = [
-            { source: 'Accenture', target: 'Microsoft', level: 'Premier Partner', award: 'Global SI POY (19x)' }, { source: 'Accenture', target: 'AWS', level: 'Premier Partner', award: 'Top Partner (GenAI)' }, { source: 'Accenture', target: 'Google Cloud', level: 'Global Services Partner', award: 'Global Services POY' }, { source: 'Accenture', target: 'Salesforce', level: 'Leader' }, { source: 'Accenture', target: 'SAP', level: 'Pinnacle Partner', award: 'Pinnacle Award' }, { source: 'Accenture', target: 'Oracle', level: 'Premier Partner' }, { source: 'Accenture', target: 'ServiceNow', level: 'Premier Partner' }, { source: 'Accenture', target: 'Snowflake', level: 'Premier Partner' }, { source: 'Accenture', target: 'Databricks', level: 'Global Partner', award: 'Global POY' },
-            { source: 'Deloitte', target: 'AWS', level: 'Premier Consulting Partner', award: 'Global GenAI & Security POY' }, { source: 'Deloitte', target: 'Google Cloud', level: 'Premier Services Partner', award: 'Global Industry POY' }, { source: 'Deloitte', target: 'Salesforce', level: 'Global Partner', award: 'Partner Innovation Award (10x)' }, { source: 'Deloitte', target: 'SAP', level: 'Pinnacle Partner', award: 'Pinnacle Award (3x)' }, { source: 'Deloitte', target: 'Oracle', level: 'Global Partner', award: 'Global NetSuite POY' }, { source: 'Deloitte', target: 'ServiceNow', level: 'Global Elite Partner', award: 'Global POY' }, { source: 'Deloitte', target: 'Snowflake', level: 'Global SI Partner' }, { source: 'Deloitte', target: 'Databricks', level: 'Strategic Partner' }, { source: 'Deloitte', target: 'Microsoft', level: 'Premier Partner' }, { source: 'Deloitte', target: 'RoviSys', level: 'Technology Partner'},
-            { source: 'PwC', target: 'Microsoft', level: 'Global Partner', award: 'Global Building with AI POY' }, { source: 'PwC', target: 'Google Cloud', level: 'Premier Partner' }, { source: 'PwC', target: 'Salesforce', level: 'Strategic Alliance', award: 'Partner Innovation Award' }, { source: 'PwC', target: 'SAP', level: 'Validated Partner', award: 'Partner Paragon Winner' }, { source: 'PwC', target: 'Oracle', level: 'Strategic Alliance' }, { source: 'PwC', target: 'AWS', level: 'Premier Partner' },
-            { source: 'KPMG', target: 'Microsoft', level: 'Global Advisory Finalist' }, { source: 'KPMG', target: 'Google Cloud', level: 'DEI Partner', award: 'Global DEI POY' }, { source: 'KPMG', target: 'SAP', level: 'Cloud Partner' }, { source: 'KPMG', target: 'ServiceNow', level: 'Global Elite Partner', award: 'Worldwide Transformation POY' }, { source: 'KPMG', target: 'Snowflake', level: 'Data Alliance' }, { source: 'KPMG', target: 'Databricks', level: 'Data Alliance' },
-            { source: 'EY', target: 'Microsoft', level: 'Global Advisory Partner', award: 'Global Advisory POY (4x)' }, { source: 'EY', target: 'SAP', level: 'Pinnacle Partner', award: 'Pinnacle Award (15x)' }, { source: 'EY', target: 'ServiceNow', level: 'Global Alliance Leader' }, { source: 'EY', target: 'Snowflake', level: 'Global Alliance GTM Lead' },
-            { source: 'Capgemini', target: 'Microsoft', level: 'Global Partner' }, { source: 'Capgemini', target: 'AWS', level: 'Premier GSI Partner', award: 'Global Sustainability POY' }, { source: 'Capgemini', target: 'Google Cloud', level: 'Global Industry Partner', award: 'Global Industry POY (GenAI)' }, { source: 'Capgemini', target: 'Salesforce', level: 'Strategic Alliance' }, { source: 'Capgemini', target: 'SAP', level: 'Pinnacle Partner' },
-            { source: 'TCS', target: 'Microsoft', level: 'Strategic Partner' }, { source: 'TCS', target: 'AWS', level: 'Strategic Partner' }, { source: 'TCS', target: 'Google Cloud', level: 'Strategic Partner' }, { source: 'TCS', target: 'Salesforce', level: 'Technology Partner' }, { source: 'TCS', target: 'SAP', level: 'Technology Partner' }, { source: 'TCS', target: 'Oracle', level: 'Premier Sponsor' }, { source: 'TCS', target: 'ServiceNow', level: 'Technology Partner' },
-            { source: 'Infosys', target: 'Microsoft', level: 'Gold Partner' }, { source: 'Infosys', target: 'AWS', level: 'Premier Partner' }, { source: 'Infosys', target: 'Google Cloud', level: 'Specialization Partner' }, { source: 'Infosys', target: 'SAP', level: 'Strategic Partner' }, { source: 'Infosys', target: 'Oracle', level: 'Global Innovation Partner', award: 'Global Innovation POY' },
-            { source: 'Wipro', target: 'Microsoft', level: 'Solutions Partner' }, { source: 'Wipro', target: 'Databricks', level: 'Innovation Partner', award: 'Innovation POY' }, { source: 'Wipro', target: 'AWS', level: 'Premier Partner' },
-            { source: 'Slalom', target: 'AWS', level: 'Premier Tier Services Partner', award: 'Global GenAI Consulting POY' }, { source: 'Slalom', target: 'Google Cloud', level: 'Premier Partner' }, { source: 'Slalom', target: 'Salesforce', level: 'Crest Partner' }, { source: 'Slalom', target: 'Snowflake', level: 'GSI Partner' }, { source: 'Slalom', target: 'Databricks', level: 'Strategic Partner' }, { source: 'Slalom', target: 'Microsoft', level: 'Solutions Partner' },
-            { source: 'Crowe', target: 'Microsoft', level: 'Inner Circle Partner', award: 'Inner Circle Award' }, { source: 'Crowe', target: 'Oracle', level: 'Solution Provider' }, { source: 'Crowe', target: 'Salesforce', level: 'Strategic Alliance' }, { source: 'Crowe', target: 'ServiceNow', level: 'Strategic Alliance' },
-            { source: 'RSM', target: 'Microsoft', level: 'Solutions Partner' }, { source: 'RSM', target: 'Oracle', level: 'Global Solution Provider', award: 'Worldwide NetSuite POY' }, { source: 'RSM', target: 'Salesforce', level: 'Strategic Alliance' }, { source: 'RSM', target: 'ServiceNow', level: 'Strategic Alliance' },
-            { source: 'Grant Thornton', target: 'Microsoft', level: 'Gold Partner' }, { source: 'Grant Thornton', target: 'Oracle', level: 'Platinum, Cloud Premier Partner' }, { source: 'Grant Thornton', target: 'ServiceNow', level: 'Strategic Alliance' },
-            { source: 'Andritz', target: 'SAP', level: 'Industrial Partner' },
-            { source: 'Cognizant', target: 'AWS', level: 'Premier Partner' }, { source: 'Cognizant', target: 'Google Cloud', level: 'Specialization Partner', award: 'Data Management POY' }, { source: 'Cognizant', target: 'Microsoft', level: 'Finalist', award: 'Global SI POY Finalist (2021)' }, { source: 'Cognizant', target: 'Palo Alto Networks', level: 'Partner' },
-            { source: 'HCLTech', target: 'Google Cloud', level: 'Partner' }, { source: 'HCLTech', target: 'IBM', level: 'Strategic Partner' }, { source: 'HCLTech', target: 'Palo Alto Networks', level: 'Partner' }, { source: 'HCLTech', target: 'Microsoft', level: 'Award Winner', award: 'AI Customer Exp. POY (2024)' }
-        ];
+        // Particle background
+        const canvas = document.getElementById('particles-canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
 
-        // --- CONFIGURATION ---
-        const nodeColors = {
-            'GSI': { hex: '#0ea5e9', transparent: '#0ea5e933', bg: 'bg-sky-500' },
-            'Advisory-Led': { hex: '#a855f7', transparent: '#a855f733', bg: 'bg-purple-500' },
-            'Modern Consultancy': { hex: '#ec4899', transparent: '#ec489933', bg: 'bg-pink-500' },
-            'Industrial/OT': { hex: '#22c55e', transparent: '#22c55e33', bg: 'bg-green-500' },
-            'Tech Vendor': { hex: '#f97316', transparent: '#f9731633', bg: 'bg-orange-500' },
-        };
-        const nodeSizes = {
-            'GSI': 80, 'Advisory-Led': 70, 'Modern Consultancy': 65,
-            'Industrial/OT': 60, 'Tech Vendor': 90,
-        };
+        const particles = [];
+        const particleCount = 50;
 
-        const container = document.getElementById('graph-container');
-        const width = container.clientWidth;
-        const height = container.clientHeight;
-        const tooltip = d3.select("#tooltip");
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.vx = (Math.random() - 0.5) * 0.5;
+                this.vy = (Math.random() - 0.5) * 0.5;
+                this.radius = Math.random() * 2;
+                this.opacity = Math.random() * 0.5;
+            }
 
-        // --- D3 Simulation ---
-        const simulation = d3.forceSimulation(firms)
-            .force("link", d3.forceLink(partnerships).id(d => d.id).distance(110).strength(0.7))
-            .force("charge", d3.forceManyBody().strength(-350))
-            .force("center", d3.forceCenter(width / 2, height / 2))
-            .force("x", d3.forceX(width / 2).strength(0.05)) // Gently pull nodes to the horizontal center
-            .force("y", d3.forceY(height / 2).strength(0.05)) // Gently pull nodes to the vertical center
-            .force("collide", d3.forceCollide().radius(d => (nodeSizes[d.type] / 2) + 15).strength(1));
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
 
-        // --- Render Graph ---
-        const svg = d3.select("#svg-links");
-        const nodesContainer = d3.select("#html-nodes");
+                if (this.x < 0 || this.x > canvas.width) this.vx = -this.vx;
+                if (this.y < 0 || this.y > canvas.height) this.vy = -this.vy;
+            }
 
-        simulation.stop();
-        for (let i = 0; i < 300; ++i) simulation.tick();
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(0, 255, 204, ${this.opacity})`;
+                ctx.fill();
+            }
+        }
 
-        const link = svg.append("g")
-            .selectAll("line")
-            .data(partnerships)
-            .join("line")
-            .attr("class", "link")
-            .style("stroke", d => nodeColors[d.source.type].hex)
-            .attr("x1", d => d.source.x)
-            .attr("y1", d => d.source.y)
-            .attr("x2", d => d.target.x)
-            .attr("y2", d => d.target.y);
+        for (let i = 0; i < particleCount; i++) {
+            particles.push(new Particle());
+        }
 
-        const node = nodesContainer.selectAll("div")
-            .data(firms)
-            .join("div")
-            .attr("class", d => `node ${nodeColors[d.type].bg}`)
-            .style("--glow-color", d => nodeColors[d.type].hex)
-            .style("--glow-color-transparent", d => nodeColors[d.type].transparent)
-            .style("width", d => `${nodeSizes[d.type]}px`)
-            .style("height", d => `${nodeSizes[d.type]}px`)
-            .style("left", d => `${d.x - nodeSizes[d.type] / 2}px`)
-            .style("top", d => `${d.y - nodeSizes[d.type] / 2}px`)
-            .text(d => d.id);
-        
-        // --- Interactivity ---
-        node.on("mouseover", (event, d) => {
-            const connectedLinks = partnerships.filter(l => l.source.id === d.id || l.target.id === d.id);
-            const connectedNodeIds = new Set([d.id]);
-            connectedLinks.forEach(l => {
-                connectedNodeIds.add(l.source.id);
-                connectedNodeIds.add(l.target.id);
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(particle => {
+                particle.update();
+                particle.draw();
             });
+            requestAnimationFrame(animateParticles);
+        }
+        animateParticles();
 
-            node.style("opacity", n => connectedNodeIds.has(n.id) ? 1 : 0.1);
-            link.style("stroke-opacity", l => (l.source.id === d.id || l.target.id === d.id) ? 0.7 : 0.05);
+        // D3 Visualization
+        window.addEventListener('DOMContentLoaded', function() {
+            if (typeof d3 === 'undefined') {
+                console.error('D3.js failed to load');
+                return;
+            }
 
-            tooltip.style("display", "block").style("opacity", 1)
-                   .style("--glow-color", nodeColors[d.type].hex)
-                   .style("--glow-color-transparent", nodeColors[d.type].transparent);
+            // Data
+            const firms = [
+                { id: 'Accenture', type: 'GSI' }, { id: 'TCS', type: 'GSI' }, { id: 'Capgemini', type: 'GSI' }, 
+                { id: 'Infosys', type: 'GSI' }, { id: 'Wipro', type: 'GSI' }, { id: 'Cognizant', type: 'GSI' }, 
+                { id: 'HCLTech', type: 'GSI' },
+                { id: 'Deloitte', type: 'Advisory' }, { id: 'PwC', type: 'Advisory' }, 
+                { id: 'EY', type: 'Advisory' }, { id: 'KPMG', type: 'Advisory' }, 
+                { id: 'Crowe', type: 'Advisory' }, { id: 'RSM', type: 'Advisory' }, 
+                { id: 'Grant Thornton', type: 'Advisory' },
+                { id: 'Slalom', type: 'Modern' },
+                { id: 'RoviSys', type: 'Industrial' }, { id: 'Andritz', type: 'Industrial' },
+                { id: 'Microsoft', type: 'Tech' }, { id: 'AWS', type: 'Tech' }, 
+                { id: 'Google Cloud', type: 'Tech' }, { id: 'Salesforce', type: 'Tech' }, 
+                { id: 'SAP', type: 'Tech' }, { id: 'Oracle', type: 'Tech' }, 
+                { id: 'ServiceNow', type: 'Tech' }, { id: 'Snowflake', type: 'Tech' }, 
+                { id: 'Databricks', type: 'Tech' }, { id: 'IBM', type: 'Tech' }, 
+                { id: 'Palo Alto', type: 'Tech' }
+            ];
+
+            const partnerships = [
+                { source: 'Accenture', target: 'Microsoft', level: 'Premier', award: 'Global SI POY (19x)' },
+                { source: 'Accenture', target: 'AWS', level: 'Premier', award: 'GenAI Leader' },
+                { source: 'Accenture', target: 'Google Cloud', level: 'Global', award: 'Services POY' },
+                { source: 'Accenture', target: 'Salesforce', level: 'Leader' },
+                { source: 'Accenture', target: 'SAP', level: 'Pinnacle', award: 'Pinnacle Award' },
+                { source: 'Accenture', target: 'Oracle', level: 'Premier' },
+                { source: 'Accenture', target: 'ServiceNow', level: 'Premier' },
+                { source: 'Accenture', target: 'Snowflake', level: 'Premier' },
+                { source: 'Accenture', target: 'Databricks', level: 'Global', award: 'Global POY' },
+                { source: 'Deloitte', target: 'AWS', level: 'Premier', award: 'GenAI & Security POY' },
+                { source: 'Deloitte', target: 'Google Cloud', level: 'Premier', award: 'Industry POY' },
+                { source: 'Deloitte', target: 'Salesforce', level: 'Global', award: 'Innovation (10x)' },
+                { source: 'Deloitte', target: 'SAP', level: 'Pinnacle', award: 'Pinnacle (3x)' },
+                { source: 'Deloitte', target: 'Oracle', level: 'Global', award: 'NetSuite POY' },
+                { source: 'Deloitte', target: 'ServiceNow', level: 'Elite', award: 'Global POY' },
+                { source: 'Deloitte', target: 'Snowflake', level: 'Global SI' },
+                { source: 'Deloitte', target: 'Databricks', level: 'Strategic' },
+                { source: 'Deloitte', target: 'Microsoft', level: 'Premier' },
+                { source: 'Deloitte', target: 'RoviSys', level: 'Technology'},
+                { source: 'PwC', target: 'Microsoft', level: 'Global', award: 'AI POY' },
+                { source: 'PwC', target: 'Google Cloud', level: 'Premier' },
+                { source: 'PwC', target: 'Salesforce', level: 'Strategic', award: 'Innovation' },
+                { source: 'PwC', target: 'SAP', level: 'Validated', award: 'Paragon' },
+                { source: 'PwC', target: 'Oracle', level: 'Strategic' },
+                { source: 'PwC', target: 'AWS', level: 'Premier' },
+                { source: 'KPMG', target: 'Microsoft', level: 'Advisory' },
+                { source: 'KPMG', target: 'Google Cloud', level: 'DEI', award: 'DEI POY' },
+                { source: 'KPMG', target: 'SAP', level: 'Cloud' },
+                { source: 'KPMG', target: 'ServiceNow', level: 'Elite', award: 'Transform POY' },
+                { source: 'KPMG', target: 'Snowflake', level: 'Data' },
+                { source: 'KPMG', target: 'Databricks', level: 'Data' },
+                { source: 'EY', target: 'Microsoft', level: 'Advisory', award: 'Advisory POY (4x)' },
+                { source: 'EY', target: 'SAP', level: 'Pinnacle', award: 'Pinnacle (15x)' },
+                { source: 'EY', target: 'ServiceNow', level: 'Alliance' },
+                { source: 'EY', target: 'Snowflake', level: 'GTM Lead' },
+                { source: 'Capgemini', target: 'Microsoft', level: 'Global' },
+                { source: 'Capgemini', target: 'AWS', level: 'GSI', award: 'Sustainability POY' },
+                { source: 'Capgemini', target: 'Google Cloud', level: 'Industry', award: 'GenAI POY' },
+                { source: 'Capgemini', target: 'Salesforce', level: 'Strategic' },
+                { source: 'Capgemini', target: 'SAP', level: 'Pinnacle' },
+                { source: 'TCS', target: 'Microsoft', level: 'Strategic' },
+                { source: 'TCS', target: 'AWS', level: 'Strategic' },
+                { source: 'TCS', target: 'Google Cloud', level: 'Strategic' },
+                { source: 'TCS', target: 'Salesforce', level: 'Technology' },
+                { source: 'TCS', target: 'SAP', level: 'Technology' },
+                { source: 'TCS', target: 'Oracle', level: 'Premier' },
+                { source: 'TCS', target: 'ServiceNow', level: 'Technology' },
+                { source: 'Infosys', target: 'Microsoft', level: 'Gold' },
+                { source: 'Infosys', target: 'AWS', level: 'Premier' },
+                { source: 'Infosys', target: 'Google Cloud', level: 'Specialization' },
+                { source: 'Infosys', target: 'SAP', level: 'Strategic' },
+                { source: 'Infosys', target: 'Oracle', level: 'Innovation', award: 'Innovation POY' },
+                { source: 'Wipro', target: 'Microsoft', level: 'Solutions' },
+                { source: 'Wipro', target: 'Databricks', level: 'Innovation', award: 'Innovation POY' },
+                { source: 'Wipro', 'target': 'AWS', level: 'Premier' },
+                { source: 'Slalom', target: 'AWS', level: 'Premier Tier', award: 'GenAI Consulting POY' },
+                { source: 'Slalom', target: 'Google Cloud', level: 'Premier' },
+                { source: 'Slalom', target: 'Salesforce', level: 'Crest' },
+                { source: 'Slalom', target: 'Snowflake', level: 'GSI' },
+                { source: 'Slalom', target: 'Databricks', level: 'Strategic' },
+                { source: 'Slalom', target: 'Microsoft', level: 'Solutions' },
+                { source: 'Crowe', target: 'Microsoft', level: 'Inner Circle', award: 'Inner Circle' },
+                { source: 'Crowe', target: 'Oracle', level: 'Solution' },
+                { source: 'Crowe', target: 'Salesforce', level: 'Strategic' },
+                { source: 'Crowe', target: 'ServiceNow', level: 'Strategic' },
+                { source: 'RSM', target: 'Microsoft', level: 'Solutions' },
+                { source: 'RSM', target: 'Oracle', level: 'Global', award: 'NetSuite POY' },
+                { source: 'RSM', target: 'Salesforce', level: 'Strategic' },
+                { source: 'RSM', target: 'ServiceNow', level: 'Strategic' },
+                { source: 'Grant Thornton', target: 'Microsoft', level: 'Gold' },
+                { source: 'Grant Thornton', target: 'Oracle', level: 'Platinum' },
+                { source: 'Grant Thornton', target: 'ServiceNow', level: 'Strategic' },
+                { source: 'Andritz', target: 'SAP', level: 'Industrial' },
+                { source: 'Cognizant', target: 'AWS', level: 'Premier' },
+                { source: 'Cognizant', target: 'Google Cloud', level: 'Specialization', award: 'Data POY' },
+                { source: 'Cognizant', target: 'Microsoft', level: 'Finalist', award: 'SI POY Finalist' },
+                { source: 'Cognizant', target: 'Palo Alto', level: 'Partner' },
+                { source: 'HCLTech', target: 'Google Cloud', level: 'Partner' },
+                { source: 'HCLTech', target: 'IBM', level: 'Strategic' },
+                { source: 'HCLTech', target: 'Palo Alto', level: 'Partner' },
+                { source: 'HCLTech', target: 'Microsoft', level: 'Winner', award: 'AI CX POY' }
+            ];
+
+            // Color scheme
+            const nodeColors = {
+                'GSI': '#00ffcc',
+                'Advisory': '#7c3aed',
+                'Modern': '#ff006e',
+                'Industrial': '#22c55e',
+                'Tech': '#ff7b00'
+            };
+
+            const nodeSizes = {
+                'GSI': 35,
+                'Advisory': 30,
+                'Modern': 28,
+                'Industrial': 25,
+                'Tech': 40
+            };
+
+            // Setup
+            const container = document.getElementById('graph-container');
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+
+            const svg = d3.select("#main-svg")
+                .attr("viewBox", [0, 0, width, height]);
+
+            // Simulation
+            const simulation = d3.forceSimulation(firms)
+                .force("link", d3.forceLink(partnerships).id(d => d.id).distance(100).strength(0.8))
+                .force("charge", d3.forceManyBody().strength(-800))
+                .force("center", d3.forceCenter(width / 2, height / 2).strength(0.5))
+                .force("collision", d3.forceCollide().radius(d => nodeSizes[d.type] + 20));
+
+            // Links
+            const link = svg.append("g")
+                .selectAll("line")
+                .data(partnerships)
+                .enter().append("line")
+                .attr("class", "link")
+                .style("stroke", d => {
+                    const sourceType = d.source.type;
+                    return nodeColors[sourceType];
+                });
+
+            // Nodes
+            const node = svg.append("g")
+                .selectAll("g")
+                .data(firms)
+                .enter().append("g")
+                .attr("class", "node")
+                .call(d3.drag()
+                    .on("start", dragstarted)
+                    .on("drag", dragged)
+                    .on("end", dragended));
+
+            // Node circles
+            node.append("circle")
+                .attr("class", "node-circle")
+                .attr("r", d => nodeSizes[d.type])
+                .style("stroke", d => nodeColors[d.type])
+                .style("color", d => nodeColors[d.type]);
+
+            // Pulse effect
+            node.append("circle")
+                .attr("class", "node-pulse")
+                .attr("r", d => nodeSizes[d.type])
+                .style("stroke", d => nodeColors[d.type])
+                .style("animation-delay", (d, i) => `${i * 0.1}s`);
+
+            // Labels
+            node.append("text")
+                .attr("class", "node-label")
+                .attr("dy", ".35em")
+                .text(d => d.id)
+                .style("font-size", d => `${Math.max(8, nodeSizes[d.type] / 3.5)}px`);
+
+            // Tooltip
+            const tooltip = document.getElementById('tooltip');
             
-            let partnersHtml = '<ul class="space-y-1">';
-            connectedLinks.forEach(link => {
-                const partnerNode = link.source.id === d.id ? link.target.id : link.source.id;
-                partnersHtml += `<li><span class="tooltip-partner-type">${link.level || 'Partner'}:</span> <strong>${partnerNode}</strong>${link.award ? ` <span class="tooltip-award">(${link.award})</span>` : ''}</li>`;
+            // A function to hide the tooltip and reset styles
+            function hideTooltip() {
+                tooltip.classList.remove('visible');
+                svg.selectAll('.node').style("opacity", 1);
+                svg.selectAll('.link').style("opacity", 0.2).classed("highlighted", false);
+            }
+
+            // Interactions
+            node.on("mouseover", function(event, d) {
+                const connections = partnerships.filter(l => 
+                    (typeof l.source === 'object' ? l.source.id : l.source) === d.id || 
+                    (typeof l.target === 'object' ? l.target.id : l.target) === d.id
+                );
+                
+                const connectedIds = new Set([d.id]);
+                connections.forEach(l => {
+                    connectedIds.add(typeof l.source === 'object' ? l.source.id : l.source);
+                    connectedIds.add(typeof l.target === 'object' ? l.target.id : l.target);
+                });
+
+                node.style("opacity", n => connectedIds.has(n.id) ? 1 : 0.1);
+                link.style("opacity", l => {
+                    const sourceId = typeof l.source === 'object' ? l.source.id : l.source;
+                    const targetId = typeof l.target === 'object' ? l.target.id : l.target;
+                    return (sourceId === d.id || targetId === d.id) ? 0.8 : 0.05;
+                }).classed("highlighted", l => {
+                    const sourceId = typeof l.source === 'object' ? l.source.id : l.source;
+                    const targetId = typeof l.target === 'object' ? l.target.id : l.target;
+                    return sourceId === d.id || targetId === d.id;
+                });
+
+                let connectionsContent = '';
+                connections.forEach(conn => {
+                    const partnerId = (typeof conn.source === 'object' ? conn.source.id : conn.source) === d.id 
+                        ? (typeof conn.target === 'object' ? conn.target.id : conn.target)
+                        : (typeof conn.source === 'object' ? conn.source.id : conn.source);
+                    connectionsContent += `
+                        <div class="tooltip-item">
+                            <div>
+                                <div class="tooltip-partner-name">${partnerId}</div>
+                                <div class="tooltip-level">${conn.level}</div>
+                            </div>
+                            ${conn.award ? `<div class="tooltip-award">★ ${conn.award}</div>` : ''}
+                        </div>
+                    `;
+                });
+
+                let content = `
+                    <div class="tooltip-header">${d.id}</div>
+                    <div class="tooltip-type">${d.type} • ${connections.length} Partnerships</div>
+                    <div class="tooltip-grid">${connectionsContent}</div>
+                `;
+
+                tooltip.innerHTML = content;
+                tooltip.classList.add('visible');
+                tooltip.style.left = (event.pageX + 20) + 'px';
+                tooltip.style.top = (event.pageY - 10) + 'px';
+            })
+            .on("mousemove", function(event) {
+                tooltip.style.left = (event.pageX + 20) + 'px';
+                tooltip.style.top = (event.pageY - 10) + 'px';
+            })
+            .on("mouseout", function() {
+                setTimeout(() => {
+                    if (!tooltip.matches(':hover')) {
+                        hideTooltip();
+                    }
+                }, 300);
             });
-            partnersHtml += '</ul>';
-            tooltip.html(`<div class="tooltip-title">${d.id}</div>${partnersHtml}`);
+            
+            tooltip.addEventListener('mouseleave', hideTooltip);
 
-        }).on("mousemove", (event) => {
-            tooltip.style("left", (event.pageX + 15) + "px")
-                   .style("top", (event.pageY + 15) + "px");
-        }).on("mouseout", () => {
-            node.style("opacity", 1);
-            link.style("stroke-opacity", 0.3);
-            tooltip.style("display", "none").style("opacity", 0);
-        });
-        
-        // --- Render Legend ---
-        const legendContainer = document.getElementById('legend');
-        Object.keys(nodeColors).forEach(type => {
-            const legendEl = document.createElement('div');
-            legendEl.className = 'legend-item';
-            legendEl.innerHTML = `
-                <div class="legend-color" style="--glow-color: ${nodeColors[type].hex}; --glow-color-transparent: ${nodeColors[type].transparent}; background-color: ${nodeColors[type].hex};"></div>
-                <span class="text-sm text-gray-400">${type}</span>
-            `;
-            legendContainer.appendChild(legendEl);
-        });
 
+            // Simulation tick
+            simulation.on("tick", () => {
+                link
+                    .attr("x1", d => d.source.x)
+                    .attr("y1", d => d.source.y)
+                    .attr("x2", d => d.target.x)
+                    .attr("y2", d => d.target.y);
+
+                node.attr("transform", d => `translate(${d.x},${d.y})`);
+            });
+
+            // Drag functions
+            function dragstarted(event, d) {
+                if (!event.active) simulation.alphaTarget(0.3).restart();
+                d.fx = d.x;
+                d.fy = d.y;
+            }
+
+            function dragged(event, d) {
+                d.fx = event.x;
+                d.fy = event.y;
+            }
+
+            function dragended(event, d) {
+                if (!event.active) simulation.alphaTarget(0);
+                d.fx = null;
+                d.fy = null;
+            }
+
+            // Legend
+            const legendContainer = document.getElementById('legend');
+            let activeFilter = null;
+
+            Object.entries(nodeColors).forEach(([type, color]) => {
+                const item = document.createElement('div');
+                item.className = 'legend-item';
+                item.innerHTML = `
+                    <div class="legend-dot" style="background: ${color}; color: ${color};"></div>
+                    <span class="legend-label">${type}</span>
+                `;
+                
+                item.onclick = () => {
+                    if (activeFilter === type) {
+                        activeFilter = null;
+                        node.style("opacity", 1);
+                        link.style("opacity", 0.2);
+                        item.classList.remove('active');
+                    } else {
+                        document.querySelectorAll('.legend-item').forEach(el => el.classList.remove('active'));
+                        item.classList.add('active');
+                        activeFilter = type;
+                        
+                        const filteredIds = new Set(firms.filter(f => f.type === type).map(f => f.id));
+                        
+                        node.style("opacity", n => filteredIds.has(n.id) ? 1 : 0.1);
+                        link.style("opacity", l => {
+                            const sourceId = typeof l.source === 'object' ? l.source.id : l.source;
+                            const targetId = typeof l.target === 'object' ? l.target.id : l.target;
+                            return (filteredIds.has(sourceId) || filteredIds.has(targetId)) ? 0.3 : 0.02;
+                        });
+                    }
+                };
+                
+                legendContainer.appendChild(item);
+            });
+
+            // Controls
+            let paused = false;
+            document.getElementById('pauseBtn').onclick = function() {
+                paused = !paused;
+                this.textContent = paused ? 'Resume' : 'Pause';
+                this.classList.toggle('active');
+                if (paused) {
+                    simulation.stop();
+                } else {
+                    simulation.alpha(0.3).restart();
+                }
+            };
+
+            document.getElementById('resetBtn').onclick = function() {
+                activeFilter = null;
+                node.style("opacity", 1);
+                link.style("opacity", 0.2);
+                document.querySelectorAll('.legend-item').forEach(el => el.classList.remove('active'));
+                simulation.alpha(1).restart();
+            };
+
+            let focusMode = false;
+            document.getElementById('focusBtn').onclick = function() {
+                focusMode = !focusMode;
+                this.classList.toggle('active');
+                const isMobile = window.innerWidth <= 1024;
+
+                document.querySelector('.header').style.display = focusMode ? 'none' : 'block';
+                // Only toggle side panel and stats if not on mobile
+                if (!isMobile) {
+                    document.querySelector('.side-panel').style.display = focusMode ? 'none' : 'flex';
+                    document.querySelector('.stats-bar').style.display = focusMode ? 'none' : 'flex';
+                }
+            };
+
+        });
     </script>
 </body>
 </html>
