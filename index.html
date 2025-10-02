@@ -1,936 +1,264 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Partner Ecosystem Intelligence | 2025</title>
+    <title>GHSP RFQ Automation - Technical Architecture</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* General setup and custom properties.
-          Disables default margin/padding and sets up a futuristic cursor.
-        */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            cursor: none;
-        }
-
-        :root {
-            --primary-glow: #00ffcc;
-            --secondary-glow: #7c3aed;
-            --accent-glow: #ff006e;
-        }
-        
         body {
-            font-family: 'Space Mono', monospace;
-            background: #000000;
-            overflow: hidden;
-            position: relative;
-            height: 100vh;
+            font-family: 'Inter', sans-serif;
+            /* Custom RSM Colors */
+            --rsm-gray: #4A5568;
+            --rsm-green: #68B342;
+            --rsm-blue: #3280B4;
         }
-
-        /* Custom cursor styling for a high-tech feel */
-        .cursor {
-            width: 20px;
-            height: 20px;
-            border: 2px solid var(--primary-glow);
-            border-radius: 50%;
-            position: fixed;
-            pointer-events: none;
-            z-index: 9999;
-            transition: all 0.05s ease; /* Made transition faster */
-            mix-blend-mode: difference;
+        .rsm-bg-gray { background-color: var(--rsm-gray); }
+        .rsm-bg-green { background-color: var(--rsm-green); }
+        .rsm-bg-blue { background-color: var(--rsm-blue); }
+        .rsm-text-gray { color: var(--rsm-gray); }
+        .rsm-text-green { color: var(--rsm-green); }
+        .rsm-text-blue { color: var(--rsm-blue); }
+        .rsm-border-gray { border-color: var(--rsm-gray); }
+        .rsm-border-green { border-color: var(--rsm-green); }
+        .rsm-border-blue { border-color: var(--rsm-blue); }
+        .section-title {
+            @apply text-3xl font-bold rsm-text-gray mb-6 pb-2 border-b-2 rsm-border-blue;
         }
-
-        .cursor-follower {
-            width: 8px;
-            height: 8px;
-            background: var(--primary-glow);
-            border-radius: 50%;
-            position: fixed;
-            pointer-events: none;
-            z-index: 9998;
-            transition: all 0.15s ease; /* Made transition faster for less lag */
+        .card {
+            @apply bg-white rounded-lg shadow-lg p-6 mb-8;
         }
-
-        /* Animated background particles for a dynamic environment */
-        #particles-canvas {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 0;
+        .diagram-box {
+            @apply border-2 rsm-border-gray rounded-lg p-4 text-center bg-gray-50 shadow-sm;
         }
-
-        /* Main container for the entire application layout */
-        .main-wrapper {
-            position: relative;
-            z-index: 10;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
+        .diagram-arrow {
+            @apply text-2xl rsm-text-blue font-bold my-2;
         }
-
-        /* Header styling with a gradient background */
-        .header {
-            padding: 2rem;
-            text-align: center;
-            position: relative;
-            z-index: 100;
-            background: linear-gradient(180deg, rgba(0,0,0,0.9) 0%, transparent 100%);
-        }
-
-        .main-title {
-            font-family: 'Syne', sans-serif;
-            font-size: clamp(2rem, 5vw, 4rem);
-            font-weight: 800;
-            letter-spacing: -0.02em;
-            background: linear-gradient(90deg, #fff 0%, var(--primary-glow) 50%, #fff 100%);
-            background-size: 200% auto;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            animation: shimmer 3s linear infinite;
-            margin-bottom: 0.5rem;
-        }
-
-        @keyframes shimmer {
-            to {
-                background-position: 200% center;
-            }
-        }
-
-        .subtitle {
-            font-size: 0.875rem;
-            color: #666;
-            letter-spacing: 0.2em;
-            text-transform: uppercase;
-            animation: fadeInUp 1s ease;
-        }
-
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        /* Stats bar for key metrics */
-        .stats-bar {
-            position: absolute;
-            top: 2rem;
-            right: 2rem;
-            display: flex;
-            gap: 2rem;
-            z-index: 100;
-        }
-
-        .stat-item {
-            text-align: right;
-        }
-
-        .stat-value {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--primary-glow);
-            text-shadow: 0 0 20px currentColor;
-        }
-
-        .stat-label {
-            font-size: 0.75rem;
-            color: #666;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-        }
-
-        /* Main content area layout */
-        .content-wrapper {
-            flex: 1;
-            display: flex;
-            position: relative;
-            padding: 0 2rem 2rem;
-        }
-
-        /* Side panel for controls and information */
-        .side-panel {
-            width: 300px;
-            padding-right: 2rem;
-            display: flex;
-            flex-direction: column;
-            gap: 2rem;
-        }
-
-        .panel-section {
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 8px;
-            padding: 1.5rem;
-            backdrop-filter: blur(10px);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .panel-section::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, var(--primary-glow), transparent);
-            animation: scan 3s linear infinite;
-        }
-
-        @keyframes scan {
-            from { transform: translateX(-100%); }
-            to { transform: translateX(100%); }
-        }
-
-        .panel-title {
-            font-family: 'Syne', sans-serif;
-            font-size: 0.875rem;
-            font-weight: 700;
-            color: var(--primary-glow);
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            margin-bottom: 1rem;
-        }
-
-        /* Legend items for filtering nodes */
-        .legend-item {
-            display: flex;
-            align-items: center;
-            padding: 0.5rem;
-            margin-bottom: 0.5rem;
-            border-radius: 4px;
-            transition: all 0.3s ease;
-            cursor: pointer;
-            position: relative;
-        }
-
-        .legend-item:hover {
-            background: rgba(255, 255, 255, 0.05);
-            transform: translateX(5px);
-        }
-
-        .legend-item.active {
-            background: rgba(0, 255, 204, 0.1);
-        }
-
-        .legend-item.active::after {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 2px;
-            height: 60%;
-            background: var(--primary-glow);
-            box-shadow: 0 0 10px var(--primary-glow);
-        }
-
-        .legend-dot {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            margin-right: 1rem;
-            position: relative;
-            box-shadow: 0 0 20px currentColor;
-        }
-
-        .legend-dot::after {
-            content: '';
-            position: absolute;
-            inset: -4px;
-            border-radius: 50%;
-            border: 1px solid currentColor;
-            opacity: 0.5;
-            animation: pulse-ring 2s linear infinite;
-        }
-
-        @keyframes pulse-ring {
-            0% { transform: scale(1); opacity: 0.5; }
-            100% { transform: scale(1.5); opacity: 0; }
-        }
-
-        .legend-label {
-            font-size: 0.875rem;
-            color: #999;
-        }
-
-        /* D3 graph container */
-        .graph-wrapper {
-            flex: 1;
-            position: relative;
-            border-radius: 8px;
-            overflow: hidden;
-            background: radial-gradient(circle at 50% 50%, rgba(0, 255, 204, 0.03) 0%, transparent 50%);
-        }
-
-        #graph-container {
-            width: 100%;
-            height: 100%;
-            position: relative;
-        }
-
-        /* SVG styles for nodes and links */
-        .node {
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .node-circle {
-            fill: rgba(0, 0, 0, 0.8);
-            stroke-width: 2;
-            filter: drop-shadow(0 0 20px currentColor);
-            transition: all 0.3s ease;
-        }
-
-        .node-circle:hover {
-            filter: drop-shadow(0 0 40px currentColor);
-        }
-
-        .node-pulse {
-            fill: none;
-            stroke-width: 1;
-            opacity: 0;
-            animation: node-pulse 2s ease-out infinite;
-        }
-
-        @keyframes node-pulse {
-            0% { r: 0; opacity: 1; }
-            100% { r: 40; opacity: 0; }
-        }
-
-        .node-label {
-            fill: white;
-            font-size: 10px;
-            font-weight: 600;
-            text-anchor: middle;
-            pointer-events: none;
-            opacity: 0.9;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        .link {
-            stroke-width: 1;
-            opacity: 0.2;
-            stroke-dasharray: 2 4;
-            animation: dash-flow 30s linear infinite;
-        }
-
-        @keyframes dash-flow {
-            to { stroke-dashoffset: -100; }
-        }
-
-        .link.highlighted {
-            stroke-width: 2;
-            opacity: 0.8;
-            filter: drop-shadow(0 0 10px currentColor);
-            animation: dash-flow 5s linear infinite;
-        }
-
-        /* Tooltip for displaying node information */
-        .tooltip {
-            position: absolute;
-            padding: 0.75rem;
-            background: rgba(10, 10, 10, 0.9);
-            border: 1px solid rgba(0, 255, 204, 0.3);
-            border-radius: 6px;
-            pointer-events: auto; 
-            z-index: 1000;
-            max-width: 500px;
-            opacity: 0;
-            transform: translateY(10px);
-            transition: opacity 0.3s ease, transform 0.3s ease;
-            backdrop-filter: blur(12px);
-        }
-
-        .tooltip.visible {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        .tooltip-header {
-            font-family: 'Syne', sans-serif;
-            font-size: 0.9rem;
-            font-weight: 700;
-            color: var(--primary-glow);
-            margin-bottom: 0.25rem;
-            text-transform: uppercase;
-        }
-
-        .tooltip-type {
-            font-size: 0.7rem;
-            color: #777;
-            margin-bottom: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-        }
-        
-        .tooltip-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 0.5rem;
-            margin-top: 0.5rem;
-            max-height: 220px;
-            overflow-y: auto;
-            padding-right: 8px;
-        }
-
-        /* Custom scrollbar for tooltip grid */
-        .tooltip-grid::-webkit-scrollbar { width: 4px; }
-        .tooltip-grid::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); border-radius: 2px; }
-        .tooltip-grid::-webkit-scrollbar-thumb { background-color: var(--primary-glow); border-radius: 2px; }
-
-        .tooltip-item {
-            padding: 0.5rem;
-            background: rgba(255, 255, 255, 0.03);
-            border-left: 2px solid rgba(255, 255, 255, 0.1);
-            border-radius: 3px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            min-height: 60px;
-            transition: all 0.2s ease-in-out;
-        }
-        
-        .tooltip-item:hover {
-            transform: translateY(-2px);
-            background: rgba(0, 255, 204, 0.08);
-            border-left-color: var(--primary-glow);
-        }
-
-        .tooltip-partner-name {
-            font-weight: 700;
-            color: #eee;
-            font-size: 0.75rem;
-        }
-
-        .tooltip-level {
-            color: #888;
-            font-size: 0.6rem;
-            text-transform: uppercase;
-            margin-top: 2px;
-        }
-
-        .tooltip-award {
-            color: #ffd700;
-            font-size: 0.65rem;
-            font-weight: 600;
-            margin-top: auto;
-            padding-top: 0.3rem;
-        }
-
-        /* Control buttons for interaction */
-        .controls {
-            position: absolute;
-            bottom: 2rem;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            gap: 1rem;
-            z-index: 100;
-        }
-
-        .control-btn {
-            padding: 0.75rem 1.5rem;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 4px;
-            color: #999;
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            transition: all 0.3s ease;
-            cursor: pointer;
-        }
-
-        .control-btn:hover {
-            background: rgba(0, 255, 204, 0.1);
-            border-color: var(--primary-glow);
-            color: var(--primary-glow);
-            transform: translateY(-2px);
-        }
-
-        .control-btn.active {
-            background: var(--primary-glow);
-            color: #000;
-            font-weight: 700;
-        }
-
-        /* Loading screen for initial setup */
-        .loading-screen {
-            position: fixed;
-            inset: 0;
-            background: #000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 10000;
-            animation: fadeOut 0.5s ease 1.5s forwards;
-        }
-
-        .loading-text {
-            font-family: 'Syne', sans-serif;
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--primary-glow);
-            animation: glitch 1s linear infinite;
-        }
-
-        @keyframes glitch {
-            0%, 100% { text-shadow: 0 0 5px var(--primary-glow); }
-            25% { text-shadow: -2px 0 #ff006e, 2px 0 #00ffcc; }
-            50% { text-shadow: 2px 0 #7c3aed, -2px 0 #00ffcc; }
-            75% { text-shadow: 0 0 10px var(--primary-glow); }
-        }
-
-        @keyframes fadeOut {
-            to { opacity: 0; pointer-events: none; }
-        }
-
-        /* Responsive design adjustments */
-        @media (max-width: 1024px) {
-            .side-panel, .stats-bar { display: none; }
-            .tooltip-grid { grid-template-columns: repeat(2, 1fr); }
-        }
-        @media (max-width: 768px) {
-            .tooltip { max-width: 320px; }
-            .tooltip-grid { grid-template-columns: 1fr; }
+        pre {
+            @apply bg-gray-800 text-white p-4 rounded-lg overflow-x-auto text-sm;
         }
     </style>
 </head>
-<body>
-    <!-- Custom cursor elements -->
-    <div class="cursor"></div>
-    <div class="cursor-follower"></div>
+<body class="bg-gray-100">
 
-    <!-- Loading screen -->
-    <div class="loading-screen">
-        <div class="loading-text">INITIALIZING NEURAL NETWORK</div>
-    </div>
-
-    <!-- Particle background canvas -->
-    <canvas id="particles-canvas"></canvas>
-
-    <!-- Main application wrapper -->
-    <div class="main-wrapper">
-        <!-- Header -->
-        <header class="header">
-            <h1 class="main-title">PARTNER ECOSYSTEM</h1>
-            <p class="subtitle">Strategic Alliance Intelligence • 2025</p>
-        </header>
-
-        <!-- Stats bar -->
-        <div class="stats-bar">
-            <div class="stat-item">
-                <div id="partners-stat" class="stat-value">0</div>
-                <div class="stat-label">Partners</div>
-            </div>
-            <div class="stat-item">
-                <div id="alliances-stat" class="stat-value">0</div>
-                <div class="stat-label">Alliances</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-value">89%</div>
-                <div class="stat-label">Density</div>
-            </div>
-        </div>
-
-        <!-- Content wrapper -->
-        <div class="content-wrapper">
-            <!-- Side panel -->
-            <aside class="side-panel">
-                <div class="panel-section">
-                    <h3 class="panel-title">Classification</h3>
-                    <div id="legend"></div>
+    <!-- Header -->
+    <header class="bg-white shadow-md sticky top-0 z-10">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-4">
+                <!-- RSM Logo -->
+                <div class="flex items-center space-x-1">
+                    <div class="w-3 h-6 rsm-bg-gray rounded-sm"></div>
+                    <div class="w-3 h-6 rsm-bg-green rounded-sm"></div>
+                    <div class="w-12 h-6 rsm-bg-blue rounded-sm"></div>
                 </div>
-                <div class="panel-section">
-                    <h3 class="panel-title">Intelligence</h3>
-                    <div style="color: #666; font-size: 0.75rem; line-height: 1.6;">
-                        <div style="margin-bottom: 0.5rem;">
-                            <span style="color: var(--primary-glow);">▶</span> Real-time network analysis
-                        </div>
-                        <div style="margin-bottom: 0.5rem;">
-                            <span style="color: var(--primary-glow);">▶</span> 20+ award-winning partnerships
-                        </div>
-                        <div style="margin-bottom: 0.5rem;">
-                            <span style="color: var(--primary-glow);">▶</span> Hover to explore connections
-                        </div>
-                        <div>
-                            <span style="color: var(--primary-glow);">▶</span> Click legend to filter
-                        </div>
+                <span class="rsm-text-gray text-2xl font-bold">RSM</span>
+            </div>
+            <h1 class="hidden md:block text-xl md:text-2xl font-semibold rsm-text-gray text-right">GHSP RFQ Automation <br><span class="text-lg font-medium rsm-text-blue">Technical Architecture</span></h1>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto p-4 md:p-8">
+        
+        <!-- System Overview -->
+        <section id="overview" class="card">
+            <h2 class="section-title">System Overview</h2>
+            <p class="text-gray-700 leading-relaxed">
+                The GHSP RFQ Automation system is a modern, serverless, event-driven architecture designed to efficiently process Request for Quote (RFQ) documents from automotive manufacturers. The system harnesses the power of Azure Functions for scalable compute, the Microsoft Agent Framework for sophisticated AI orchestration, and cutting-edge models from OpenAI/Azure OpenAI for intelligent document analysis and data extraction.
+            </p>
+        </section>
+
+        <!-- High-Level Architecture -->
+        <section id="high-level-arch" class="card">
+            <h2 class="section-title">High-Level Architecture</h2>
+            <div class="flex flex-col items-center">
+                <div class="diagram-box w-full max-w-4xl">
+                    <h3 class="font-semibold text-lg rsm-text-gray mb-4">Input Sources</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div class="bg-white p-3 rounded-md border">Email Attachment</div>
+                        <div class="bg-white p-3 rounded-md border">Web Upload</div>
+                        <div class="bg-white p-3 rounded-md border">API Call</div>
+                        <div class="bg-white p-3 rounded-md border">Manual Upload</div>
                     </div>
                 </div>
-            </aside>
-
-            <!-- Graph wrapper -->
-            <main class="graph-wrapper">
-                <div id="graph-container">
-                    <svg id="main-svg" width="100%" height="100%"></svg>
+                <div class="diagram-arrow">↓</div>
+                <div class="diagram-box w-full max-w-4xl">
+                    <h3 class="font-semibold text-lg rsm-text-gray mb-4">Azure Function App (HTTP Triggered)</h3>
+                    <div class="space-y-4 text-left">
+                        <div class="bg-blue-50 p-3 rounded-md border rsm-border-blue"><b>ProcessRFQ:</b> Receives file, returns PowerPoint presentation.</div>
+                        <div class="bg-blue-50 p-3 rounded-md border rsm-border-blue"><b>GetAnalysisOnly:</b> Receives file, returns JSON analysis.</div>
+                    </div>
                 </div>
-            </main>
+                <div class="diagram-arrow">↓</div>
+                <div class="diagram-box w-full max-w-4xl">
+                    <h3 class="font-semibold text-lg rsm-text-gray">RFQ Automation Orchestrator</h3>
+                    <p class="text-sm text-gray-600">Coordinates all processing steps, handles errors, and manages resources.</p>
+                </div>
+                <div class="diagram-arrow">↓</div>
+                <div class="w-full max-w-4xl grid md:grid-cols-3 gap-4 text-center">
+                    <div class="diagram-box">
+                        <h4 class="font-semibold rsm-text-green">Document Ingestion</h4>
+                        <div class="diagram-arrow">↓</div>
+                        <div class="bg-green-50 p-2 rounded border rsm-border-green">Extracted Content</div>
+                    </div>
+                    <div class="diagram-box">
+                        <h4 class="font-semibold rsm-text-green">AI Agent Analysis</h4>
+                        <div class="diagram-arrow">↓</div>
+                        <div class="bg-green-50 p-2 rounded border rsm-border-green">Structured Analysis</div>
+                    </div>
+                    <div class="diagram-box">
+                        <h4 class="font-semibold rsm-text-green">Template Population</h4>
+                        <div class="diagram-arrow">↓</div>
+                        <div class="bg-green-50 p-2 rounded border rsm-border-green">PowerPoint Output</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Component Architecture -->
+        <section id="components" class="card">
+            <h2 class="section-title">Component Architecture</h2>
+            <div class="space-y-8">
+                <!-- 1. Document Ingestion Service -->
+                <div>
+                    <h3 class="text-2xl font-semibold rsm-text-blue mb-4">1. Document Ingestion Service</h3>
+                    <p class="text-gray-700 mb-4">Handles file uploads and extracts content from various document formats (.docx, .xlsx, .pptx, .pdf). Supports automatic file type detection and recursive extraction from ZIP archives.</p>
+                    <h4 class="font-semibold text-lg rsm-text-gray mb-2">Technologies:</h4>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="bg-gray-200 text-gray-800 text-sm font-medium mr-2 px-2.5 py-0.5 rounded">python-docx</span>
+                        <span class="bg-gray-200 text-gray-800 text-sm font-medium mr-2 px-2.5 py-0.5 rounded">openpyxl</span>
+                        <span class="bg-gray-200 text-gray-800 text-sm font-medium mr-2 px-2.5 py-0.5 rounded">python-pptx</span>
+                        <span class="bg-gray-200 text-gray-800 text-sm font-medium mr-2 px-2.5 py-0.5 rounded">PyMuPDF</span>
+                        <span class="bg-gray-200 text-gray-800 text-sm font-medium mr-2 px-2.5 py-0.5 rounded">Pillow</span>
+                    </div>
+                </div>
+                <!-- 2. AI Agent Analysis Service -->
+                <div>
+                    <h3 class="text-2xl font-semibold rsm-text-blue mb-4">2. AI Agent Analysis Service</h3>
+                    <p class="text-gray-700 mb-4">Analyzes the extracted content using an AI agent built with the Microsoft Agent Framework. It leverages domain-specific prompt engineering to produce structured RFQ information in a reliable JSON format.</p>
+                     <h4 class="font-semibold text-lg rsm-text-gray mb-2">Extracted Information Structure:</h4>
+                    <pre><code class="language-json">{
+  "rfq_summary": { ... },
+  "specifications": [ ... ],
+  "timeline": { ... },
+  "quantities": { ... },
+  "charts_analysis": [ ... ],
+  "special_requirements": [ ... ],
+  "confidence_score": 0.95
+}</code></pre>
+                </div>
+                <!-- 3. Template Population Service -->
+                <div>
+                    <h3 class="text-2xl font-semibold rsm-text-blue mb-4">3. Template Population Service</h3>
+                    <p class="text-gray-700 mb-4">Generates a professionally formatted PowerPoint presentation from the structured JSON analysis. This component dynamically creates slides for the title, summary, specifications, timeline, and other key sections of the RFQ.</p>
+                    <h4 class="font-semibold text-lg rsm-text-gray mb-2">Key Feature:</h4>
+                    <p class="text-gray-700">Utilizes `python-pptx` for robust and flexible PowerPoint generation, allowing for dynamic creation of slides, tables, and insertion of text content based on the AI's analysis.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Deployment Architecture -->
+        <section id="deployment" class="card">
+            <h2 class="section-title">Deployment & Scaling</h2>
+            <div class="grid md:grid-cols-2 gap-8">
+                <div>
+                    <h3 class="text-xl font-semibold rsm-text-blue mb-4">Azure Resources</h3>
+                    <ul class="list-disc list-inside space-y-2 text-gray-700">
+                        <li><b>Azure Function App:</b> Python 3.11 runtime on a Consumption or Premium plan.</li>
+                        <li><b>Storage Account:</b> For function app code and template storage.</li>
+                        <li><b>Application Insights:</b> For comprehensive monitoring, logging, and performance metrics.</li>
+                        <li><b>Key Vault:</b> For secure management of API keys and secrets in production.</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-xl font-semibold rsm-text-blue mb-4">Scaling Strategy</h3>
+                    <p class="text-gray-700 mb-2">The serverless nature of Azure Functions provides automatic scaling based on demand.</p>
+                    <ul class="list-disc list-inside space-y-2 text-gray-700">
+                        <li><b>Consumption Plan:</b> Cost-effective for variable workloads, scales from 0 to N instances automatically.</li>
+                        <li><b>Premium Plan:</b> Ideal for consistent, high-performance needs with pre-warmed instances to eliminate cold starts.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Security Architecture -->
+        <section id="security" class="card">
+            <h2 class="section-title">Security Architecture</h2>
+             <p class="text-gray-700 mb-4">A multi-layered security approach ensures data integrity and protects sensitive information throughout the processing pipeline.</p>
+             <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+                 <div class="p-4 bg-gray-50 rounded-lg border">
+                     <h4 class="font-bold rsm-text-gray">Network Security</h4>
+                     <p class="text-sm text-gray-600">HTTPS only, CORS, optional IP restrictions.</p>
+                 </div>
+                 <div class="p-4 bg-gray-50 rounded-lg border">
+                     <h4 class="font-bold rsm-text-gray">Function-Level Security</h4>
+                     <p class="text-sm text-gray-600">Azure AD authentication and Managed Identity for secure access.</p>
+                 </div>
+                 <div class="p-4 bg-gray-50 rounded-lg border">
+                     <h4 class="font-bold rsm-text-gray">Data Security</h4>
+                     <p class="text-sm text-gray-600">Data is encrypted in transit (TLS 1.2+) and at rest.</p>
+                 </div>
+                  <div class="p-4 bg-gray-50 rounded-lg border">
+                     <h4 class="font-bold rsm-text-gray">Secret Management</h4>
+                     <p class="text-sm text-gray-600">Azure Key Vault is used to manage all secrets in production.</p>
+                 </div>
+             </div>
+        </section>
+
+        <!-- Technology Stack -->
+        <section id="tech-stack" class="card">
+            <h2 class="section-title">Technology Stack Summary</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr>
+                            <th class="py-2 px-4 bg-gray-200 font-semibold text-sm rsm-text-gray uppercase rounded-tl-lg">Layer</th>
+                            <th class="py-2 px-4 bg-gray-200 font-semibold text-sm rsm-text-gray uppercase">Technology</th>
+                            <th class="py-2 px-4 bg-gray-200 font-semibold text-sm rsm-text-gray uppercase rounded-tr-lg">Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white">
+                        <tr class="border-b">
+                            <td class="py-3 px-4">Compute</td>
+                            <td class="py-3 px-4">Azure Functions</td>
+                            <td class="py-3 px-4">Serverless execution</td>
+                        </tr>
+                        <tr class="border-b">
+                            <td class="py-3 px-4">AI Framework</td>
+                            <td class="py-3 px-4">Microsoft Agent Framework</td>
+                            <td class="py-3 px-4">Agent orchestration</td>
+                        </tr>
+                        <tr class="border-b">
+                            <td class="py-3 px-4">AI Model</td>
+                            <td class="py-3 px-4">Azure Open AI GPT-5</td>
+                            <td class="py-3 px-4">Document analysis</td>
+                        </tr>
+                         <tr class="border-b">
+                            <td class="py-3 px-4">Document Processing</td>
+                            <td class="py-3 px-4">python-docx, openpyxl, etc.</td>
+                            <td class="py-3 px-4">Content extraction</td>
+                        </tr>
+                        <tr>
+                            <td class="py-3 px-4 rounded-bl-lg">Monitoring</td>
+                            <td class="py-3 px-4">Application Insights</td>
+                            <td class="py-3 px-4">Observability and logging</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white mt-12">
+        <div class="container mx-auto px-6 py-4 text-center text-gray-600">
+            &copy; 2025 RSM US LLP. All rights reserved.
         </div>
+    </footer>
 
-        <!-- Controls -->
-        <div class="controls">
-            <button class="control-btn" id="pauseBtn">Pause</button>
-            <button class="control-btn" id="resetBtn">Reset</button>
-            <button class="control-btn" id="focusBtn">Focus Mode</button>
-        </div>
-    </div>
-
-    <!-- Tooltip -->
-    <div class="tooltip" id="tooltip"></div>
-
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // --- Custom Cursor Logic ---
-        const cursor = document.querySelector('.cursor');
-        const follower = document.querySelector('.cursor-follower');
-        document.addEventListener('mousemove', (e) => {
-            cursor.style.left = `${e.clientX - 10}px`;
-            cursor.style.top = `${e.clientY - 10}px`;
-            follower.style.left = `${e.clientX - 4}px`;
-            follower.style.top = `${e.clientY - 4}px`;
-        });
-
-        // --- Particle Background Animation ---
-        const particlesCanvas = document.getElementById('particles-canvas');
-        const ctx = particlesCanvas.getContext('2d');
-        particlesCanvas.width = window.innerWidth;
-        particlesCanvas.height = window.innerHeight;
-        const particles = [];
-        const particleCount = 50;
-
-        class Particle {
-            constructor() {
-                this.x = Math.random() * particlesCanvas.width;
-                this.y = Math.random() * particlesCanvas.height;
-                this.vx = (Math.random() - 0.5) * 0.5;
-                this.vy = (Math.random() - 0.5) * 0.5;
-                this.radius = Math.random() * 2;
-                this.opacity = Math.random() * 0.5;
-            }
-            update() {
-                this.x += this.vx;
-                this.y += this.vy;
-                if (this.x < 0 || this.x > particlesCanvas.width) this.vx = -this.vx;
-                if (this.y < 0 || this.y > particlesCanvas.height) this.vy = -this.vy;
-            }
-            draw() {
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                ctx.fillStyle = `rgba(0, 255, 204, ${this.opacity})`;
-                ctx.fill();
-            }
-        }
-        for (let i = 0; i < particleCount; i++) particles.push(new Particle());
-        
-        function animateParticles() {
-            ctx.clearRect(0, 0, particlesCanvas.width, particlesCanvas.height);
-            particles.forEach(p => { p.update(); p.draw(); });
-            requestAnimationFrame(animateParticles);
-        }
-        animateParticles();
-        
-        window.addEventListener('resize', () => {
-            particlesCanvas.width = window.innerWidth;
-            particlesCanvas.height = window.innerHeight;
-        });
-
-        // --- D3 Visualization ---
-        if (typeof d3 === 'undefined') {
-            console.error('D3.js failed to load');
-            return;
-        }
-
-        // --- Data Definitions ---
-        const firms = [
-            { id: 'Accenture', type: 'GSI' }, { id: 'Tata CS', type: 'GSI' }, { id: 'Capgemini', type: 'GSI' }, 
-            { id: 'Infosys', type: 'GSI' }, { id: 'Wipro', type: 'GSI' }, { id: 'Cognizant', type: 'GSI' }, 
-            { id: 'HCLTech', type: 'GSI' },
-            { id: 'Deloitte', type: 'Advisory' }, { id: 'PwC', type: 'Advisory' }, 
-            { id: 'EY', type: 'Advisory' }, { id: 'KPMG', type: 'Advisory' }, 
-            { id: 'Crowe', type: 'Advisory' }, { id: 'RSM', type: 'Advisory' }, 
-            { id: 'Grant Thornton', type: 'Advisory' },
-            { id: 'Slalom', type: 'Modern' },
-            { id: 'RoviSys', type: 'Industrial' }, { id: 'Andritz', type: 'Industrial' },
-            { id: 'Microsoft', type: 'Tech' }, { id: 'AWS', type: 'Tech' }, 
-            { id: 'Google Cloud', type: 'Tech' }, { id: 'Salesforce', type: 'Tech' }, 
-            { id: 'SAP', type: 'Tech' }, { id: 'Oracle', type: 'Tech' }, 
-            { id: 'ServiceNow', type: 'Tech' }, { id: 'Snowflake', type: 'Tech' }, 
-            { id: 'Databricks', type: 'Tech' }, { id: 'IBM', type: 'Tech' }, 
-            { id: 'Palo Alto', type: 'Tech' },
-            { id: 'Nvidia', type: 'Tech' }
-        ];
-
-        const partnerships = [
-                { source: 'Accenture', target: 'Microsoft', level: 'Premier', award: 'Global SI POY (19x)' },
-                { source: 'Accenture', target: 'AWS', level: 'Premier', award: 'GenAI Leader' },
-                { source: 'Accenture', target: 'Google Cloud', level: 'Global', award: 'Services POY' },
-                { source: 'Accenture', target: 'Salesforce', level: 'Leader' },
-                { source: 'Accenture', target: 'SAP', level: 'Pinnacle', award: 'Pinnacle Award' },
-                { source: 'Accenture', target: 'Oracle', level: 'Premier' },
-                { source: 'Accenture', target: 'ServiceNow', level: 'Premier' },
-                { source: 'Accenture', target: 'Snowflake', level: 'Premier' },
-                { source: 'Accenture', target: 'Databricks', level: 'Global', award: 'Global POY' },
-                { source: 'Deloitte', target: 'AWS', level: 'Premier', award: 'GenAI & Security POY' },
-                { source: 'Deloitte', target: 'Google Cloud', level: 'Premier', award: 'Industry POY' },
-                { source: 'Deloitte', target: 'Salesforce', level: 'Global', award: 'Innovation (10x)' },
-                { source: 'Deloitte', target: 'SAP', level: 'Pinnacle', award: 'Pinnacle (3x)' },
-                { source: 'Deloitte', target: 'Oracle', level: 'Global', award: 'NetSuite POY' },
-                { source: 'Deloitte', target: 'ServiceNow', level: 'Elite', award: 'Global POY' },
-                { source: 'Deloitte', target: 'Snowflake', level: 'Global SI' },
-                { source: 'Deloitte', target: 'Databricks', level: 'Strategic' },
-                { source: 'Deloitte', target: 'Microsoft', level: 'Premier' },
-                { source: 'Deloitte', target: 'RoviSys', level: 'Technology'},
-                { source: 'PwC', target: 'Microsoft', level: 'Global', award: 'AI POY' },
-                { source: 'PwC', target: 'Google Cloud', level: 'Premier' },
-                { source: 'PwC', target: 'Salesforce', level: 'Strategic', award: 'Innovation' },
-                { source: 'PwC', target: 'SAP', level: 'Validated', award: 'Paragon' },
-                { source: 'PwC', target: 'Oracle', level: 'Strategic' },
-                { source: 'PwC', target: 'AWS', level: 'Premier' },
-                { source: 'KPMG', target: 'Microsoft', level: 'Advisory' },
-                { source: 'KPMG', target: 'Google Cloud', level: 'DEI', award: 'DEI POY' },
-                { source: 'KPMG', target: 'SAP', level: 'Cloud' },
-                { source: 'KPMG', target: 'ServiceNow', level: 'Elite', award: 'Transform POY' },
-                { source: 'KPMG', target: 'Snowflake', level: 'Data' },
-                { source: 'KPMG', target: 'Databricks', level: 'Data' },
-                { source: 'EY', target: 'Microsoft', level: 'Advisory', award: 'Advisory POY (4x)' },
-                { source: 'EY', target: 'SAP', level: 'Pinnacle', award: 'Pinnacle (15x)' },
-                { source: 'EY', target: 'ServiceNow', level: 'Alliance' },
-                { source: 'EY', target: 'Snowflake', level: 'GTM Lead' },
-                { source: 'Capgemini', target: 'Microsoft', level: 'Global' },
-                { source: 'Capgemini', target: 'AWS', level: 'GSI', award: 'Sustainability POY' },
-                { source: 'Capgemini', target: 'Google Cloud', level: 'Industry', award: 'GenAI POY' },
-                { source: 'Capgemini', target: 'Salesforce', level: 'Strategic' },
-                { source: 'Capgemini', target: 'SAP', level: 'Pinnacle' },
-                { source: 'Tata CS', target: 'Microsoft', level: 'Strategic' },
-                { source: 'Tata CS', target: 'AWS', level: 'Strategic' },
-                { source: 'Tata CS', target: 'Google Cloud', level: 'Strategic' },
-                { source: 'Tata CS', target: 'Salesforce', level: 'Technology' },
-                { source: 'Tata CS', target: 'SAP', level: 'Technology' },
-                { source: 'Tata CS', target: 'Oracle', level: 'Premier' },
-                { source: 'Tata CS', target: 'ServiceNow', level: 'Technology' },
-                { source: 'Infosys', target: 'Microsoft', level: 'Gold' },
-                { source: 'Infosys', target: 'AWS', level: 'Premier' },
-                { source: 'Infosys', target: 'Google Cloud', level: 'Specialization' },
-                { source: 'Infosys', target: 'SAP', level: 'Strategic' },
-                { source: 'Infosys', target: 'Oracle', level: 'Innovation', award: 'Innovation POY' },
-                { source: 'Wipro', target: 'Microsoft', level: 'Solutions' },
-                { source: 'Wipro', target: 'Databricks', level: 'Innovation', award: 'Innovation POY' },
-                { source: 'Wipro', 'target': 'AWS', level: 'Premier' },
-                { source: 'Slalom', target: 'AWS', level: 'Premier Tier', award: 'GenAI Consulting POY' },
-                { source: 'Slalom', target: 'Google Cloud', level: 'Premier' },
-                { source: 'Slalom', target: 'Salesforce', level: 'Crest' },
-                { source: 'Slalom', target: 'Snowflake', level: 'GSI' },
-                { source: 'Slalom', target: 'Databricks', level: 'Strategic' },
-                { source: 'Slalom', target: 'Microsoft', level: 'Solutions' },
-                { source: 'Crowe', target: 'Microsoft', level: 'Inner Circle', award: 'Inner Circle' },
-                { source: 'Crowe', target: 'Oracle', level: 'Solution' },
-                { source: 'Crowe', target: 'Salesforce', level: 'Strategic' },
-                { source: 'Crowe', target: 'ServiceNow', level: 'Strategic' },
-                { source: 'RSM', target: 'Microsoft', level: 'Solutions' },
-                { source: 'RSM', target: 'Oracle', level: 'Global', award: 'NetSuite POY' },
-                { source: 'RSM', target: 'Salesforce', level: 'Strategic' },
-                { source: 'RSM', target: 'ServiceNow', level: 'Strategic' },
-                { source: 'Grant Thornton', target: 'Microsoft', level: 'Gold' },
-                { source: 'Grant Thornton', target: 'Oracle', level: 'Platinum' },
-                { source: 'Grant Thornton', target: 'ServiceNow', level: 'Strategic' },
-                { source: 'Andritz', target: 'SAP', level: 'Industrial' },
-                { source: 'Cognizant', target: 'AWS', level: 'Premier' },
-                { source: 'Cognizant', target: 'Google Cloud', level: 'Specialization', award: 'Data POY' },
-                { source: 'Cognizant', target: 'Microsoft', level: 'Finalist', award: 'SI POY Finalist' },
-                { source: 'Cognizant', target: 'Palo Alto', level: 'Partner' },
-                { source: 'HCLTech', target: 'Google Cloud', level: 'Partner' },
-                { source: 'HCLTech', target: 'IBM', level: 'Strategic' },
-                { source: 'HCLTech', target: 'Palo Alto', level: 'Partner' },
-                { source: 'HCLTech', target: 'Microsoft', level: 'Winner', award: 'AI CX POY' },
-                { source: 'Nvidia', target: 'Microsoft', level: 'Strategic Collaboration' },
-                { source: 'Nvidia', target: 'AWS', level: 'Strategic Collaboration' },
-                { source: 'Nvidia', target: 'Google Cloud', level: 'Strategic Partnership' },
-                { source: 'Nvidia', target: 'Oracle', level: 'Expanded Partnership' },
-                { source: 'Nvidia', target: 'SAP', level: 'Strategic Partnership' },
-                { source: 'Nvidia', 'target': 'ServiceNow', level: 'Strategic Partnership' },
-                { source: 'Nvidia', target: 'Snowflake', level: 'Strategic Partnership' },
-                { source: 'Nvidia', target: 'Databricks', level: 'Strategic Partnership' },
-                { source: 'Nvidia', target: 'IBM', level: 'Collaboration' },
-                { source: 'Nvidia', target: 'Accenture', level: 'Strategic Alliance' },
-                { source: 'Nvidia', target: 'Deloitte', level: 'Strategic Alliance', award: 'AI POY (2023)' },
-                { source: 'Nvidia', target: 'PwC', level: 'Strategic Alliance' },
-                { source: 'Nvidia', target: 'EY', level: 'Collaboration' },
-                { source: 'Nvidia', target: 'KPMG', level: 'Global Alliance' },
-                { source: 'Nvidia', target: 'Tata CS', level: 'Expanded Partnership' },
-                { source: 'Nvidia', target: 'Wipro', level: 'Strategic Partnership' },
-                { source: 'Nvidia', target: 'Infosys', level: 'Expanded Partnership' },
-                { source: 'Nvidia', target: 'Slalom', level: 'Visualization Partner' }
-        ];
-
-        // --- Update Stats ---
-        document.getElementById('partners-stat').textContent = firms.length;
-        document.getElementById('alliances-stat').textContent = partnerships.length;
-
-        // --- Color & Size Schemes ---
-        const nodeColors = {
-            'GSI': '#00ffcc', 'Advisory': '#7c3aed', 'Modern': '#ff006e',
-            'Industrial': '#22c55e', 'Tech': '#ff7b00'
-        };
-        const nodeSizes = {
-            'GSI': 35, 'Advisory': 30, 'Modern': 28, 'Industrial': 25, 'Tech': 40
-        };
-
-        // --- D3 Setup ---
-        const container = document.getElementById('graph-container');
-        let width = container.clientWidth;
-        let height = container.clientHeight;
-        const svg = d3.select("#main-svg").attr("viewBox", [0, 0, width, height]);
-        const g = svg.append("g"); // Group for zoomable elements
-
-        // --- D3 Simulation ---
-        const simulation = d3.forceSimulation(firms)
-            .force("link", d3.forceLink(partnerships).id(d => d.id).distance(120).strength(0.7))
-            .force("charge", d3.forceManyBody().strength(-900))
-            .force("center", d3.forceCenter(width / 2, height / 2).strength(0.4))
-            .force("collision", d3.forceCollide().radius(d => nodeSizes[d.type] + 25));
-
-        // --- SVG Elements ---
-        const link = g.append("g").selectAll("line").data(partnerships).enter().append("line")
-            .attr("class", "link")
-            .style("stroke", d => nodeColors[(typeof d.source === 'object' ? d.source.type : firms.find(f => f.id === d.source)?.type)] || '#666');
-
-        const node = g.append("g").selectAll("g").data(firms).enter().append("g")
-            .attr("class", "node")
-            .call(d3.drag().on("start", dragstarted).on("drag", dragged).on("end", dragended));
-        
-        node.append("circle").attr("class", "node-circle").attr("r", d => nodeSizes[d.type]).style("stroke", d => nodeColors[d.type]).style("color", d => nodeColors[d.type]);
-        node.append("circle").attr("class", "node-pulse").attr("r", d => nodeSizes[d.type]).style("stroke", d => nodeColors[d.type]).style("animation-delay", (d, i) => `${i * 0.1}s`);
-        node.append("text").attr("class", "node-label").attr("dy", ".35em").text(d => d.id).style("font-size", d => `${Math.max(8, nodeSizes[d.type] / 3.5)}px`);
-
-        // --- Tooltip Logic ---
-        const tooltip = document.getElementById('tooltip');
-        function hideTooltip() {
-            tooltip.classList.remove('visible');
-            g.selectAll('.node').style("opacity", 1);
-            g.selectAll('.link').style("opacity", 0.2).classed("highlighted", false);
-        }
-
-        node.on("mouseover", function(event, d) {
-            const connections = partnerships.filter(l => (l.source.id || l.source) === d.id || (l.target.id || l.target) === d.id);
-            const connectedIds = new Set([d.id, ...connections.flatMap(l => [l.source.id || l.source, l.target.id || l.target])]);
-
-            g.selectAll('.node').style("opacity", n => connectedIds.has(n.id) ? 1 : 0.1);
-            g.selectAll('.link').style("opacity", l => ((l.source.id || l.source) === d.id || (l.target.id || l.target) === d.id) ? 0.8 : 0.05)
-                .classed("highlighted", l => (l.source.id || l.source) === d.id || (l.target.id || l.target) === d.id);
-
-            tooltip.innerHTML = `
-                <div class="tooltip-header">${d.id}</div>
-                <div class="tooltip-type">${d.type} • ${connections.length} Partnerships</div>
-                <div class="tooltip-grid">${connections.map(conn => {
-                    const partnerId = (conn.source.id || conn.source) === d.id ? (conn.target.id || conn.target) : (conn.source.id || conn.source);
-                    return `<div class="tooltip-item">
-                                <div>
-                                    <div class="tooltip-partner-name">${partnerId}</div>
-                                    <div class="tooltip-level">${conn.level}</div>
-                                </div>
-                                ${conn.award ? `<div class="tooltip-award">★ ${conn.award}</div>` : ''}
-                            </div>`;
-                }).join('')}</div>`;
-            
-            tooltip.classList.add('visible');
-        }).on("mousemove", function(event) {
-            tooltip.style.left = `${event.pageX + 20}px`;
-            tooltip.style.top = `${event.pageY - 10}px`;
-        }).on("mouseout", () => setTimeout(() => { if (!tooltip.matches(':hover')) hideTooltip(); }, 300));
-        tooltip.addEventListener('mouseleave', hideTooltip);
-
-        // --- Simulation Tick ---
-        simulation.on("tick", () => {
-            link.attr("x1", d => d.source.x).attr("y1", d => d.source.y)
-                .attr("x2", d => d.target.x).attr("y2", d => d.target.y);
-            node.attr("transform", d => `translate(${d.x},${d.y})`);
-        });
-
-        // --- Drag & Zoom Functions ---
-        function dragstarted(event, d) { if (!event.active) simulation.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; }
-        function dragged(event, d) { d.fx = event.x; d.fy = event.y; }
-        function dragended(event, d) { if (!event.active) simulation.alphaTarget(0); d.fx = null; d.fy = null; }
-
-        const zoom = d3.zoom().scaleExtent([0.3, 5]).on("zoom", (event) => g.attr("transform", event.transform));
-        svg.call(zoom);
-
-        // --- Legend & Filtering ---
-        const legendContainer = document.getElementById('legend');
-        let activeFilter = null;
-        Object.entries(nodeColors).forEach(([type, color]) => {
-            const item = document.createElement('div');
-            item.className = 'legend-item';
-            item.innerHTML = `<div class="legend-dot" style="background: ${color}; color: ${color};"></div><span class="legend-label">${type}</span>`;
-            item.onclick = () => {
-                document.querySelectorAll('.legend-item').forEach(el => el.classList.remove('active'));
-                if (activeFilter === type) {
-                    activeFilter = null;
-                    g.selectAll('.node').style("opacity", 1);
-                    g.selectAll('.link').style("opacity", 0.2);
-                } else {
-                    activeFilter = type;
-                    item.classList.add('active');
-                    const filteredIds = new Set(firms.filter(f => f.type === type).map(f => f.id));
-                    g.selectAll('.node').style("opacity", n => filteredIds.has(n.id) ? 1 : 0.1);
-                    g.selectAll('.link').style("opacity", l => (filteredIds.has(l.source.id || l.source) || filteredIds.has(l.target.id || l.target)) ? 0.3 : 0.02);
-                }
-            };
-            legendContainer.appendChild(item);
-        });
-
-        // --- Controls Logic ---
-        let paused = false;
-        document.getElementById('pauseBtn').onclick = function() {
-            paused = !paused;
-            this.textContent = paused ? 'Resume' : 'Pause';
-            this.classList.toggle('active');
-            if (paused) simulation.stop(); else simulation.alpha(0.3).restart();
-        };
-
-        document.getElementById('resetBtn').onclick = () => {
-            activeFilter = null;
-            g.selectAll('.node').style("opacity", 1);
-            g.selectAll('.link').style("opacity", 0.2);
-            document.querySelectorAll('.legend-item').forEach(el => el.classList.remove('active'));
-            svg.transition().duration(750).call(zoom.transform, d3.zoomIdentity); // Reset zoom
-            simulation.alpha(1).restart();
-        };
-
-        let focusMode = false;
-        document.getElementById('focusBtn').onclick = function() {
-            focusMode = !focusMode;
-            this.classList.toggle('active');
-            document.querySelector('.header').style.display = focusMode ? 'none' : 'block';
-            if (window.innerWidth > 1024) {
-                document.querySelector('.side-panel').style.display = focusMode ? 'none' : 'flex';
-                document.querySelector('.stats-bar').style.display = focusMode ? 'none' : 'flex';
-            }
-        };
-
-        // --- Responsive Resizing ---
-        window.addEventListener('resize', () => {
-            width = container.clientWidth;
-            height = container.clientHeight;
-            svg.attr("viewBox", [0, 0, width, height]);
-            simulation.force("center", d3.forceCenter(width / 2, height / 2));
-            simulation.alpha(0.3).restart();
-        });
-    });
-    </script>
 </body>
 </html>
