@@ -23,7 +23,7 @@
     const { 
       LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, 
       Tooltip, Legend, ResponsiveContainer, Radar, RadarChart, 
-      PolarGrid, PolarAngleAxis, PolarRadiusAxis
+      PolarGrid, PolarAngleAxis, PolarRadiusAxis, ReferenceLine
     } = Recharts;
 
     // Icons as simple SVG components
@@ -67,15 +67,13 @@
     const REGIONS = ['North America', 'Europe', 'APAC'];
 
     const generateTrendData = (base) => [
-      { month: 'Jan', actual: base + 5, predicted: base + 4 },
-      { month: 'Feb', actual: base + 12, predicted: base + 10 },
-      { month: 'Mar', actual: base + 8, predicted: base + 9 },
-      { month: 'Apr', actual: base + 21, predicted: base + 20 },
-      { month: 'May', actual: base + 18, predicted: base + 19 },
-      { month: 'Jun', actual: base + 25, predicted: base + 24 },
-      { month: 'Jul', actual: null, predicted: base + 45 },
-      { month: 'Aug', actual: null, predicted: base + 52 },
-      { month: 'Sep', actual: null, predicted: base + 38 },
+      { month: 'Sep', actual: base + 8, predicted: base + 10 },
+      { month: 'Oct', actual: base + 15, predicted: base + 14 },
+      { month: 'Nov', actual: base + 22, predicted: base + 20 },
+      { month: 'Dec', actual: base + 18, predicted: base + 25 },  // Partial actual (we're on Dec 5)
+      { month: 'Jan \'26', actual: null, predicted: base + 32 },
+      { month: 'Feb \'26', actual: null, predicted: base + 38 },
+      { month: 'Mar \'26', actual: null, predicted: base + 35 },
     ];
 
     const rawAlertData = [
@@ -410,7 +408,7 @@
           <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16}}>
             <div>
               <h3 style={{margin: 0, fontSize: 18, fontWeight: 'bold', color: 'white'}}>Projected Failure Rate</h3>
-              <p style={{margin: '4px 0 0', fontSize: 12, color: '#94a3b8'}}>Historical vs AI Forecast (90 Days)</p>
+              <p style={{margin: '4px 0 0', fontSize: 12, color: '#94a3b8'}}>3-month history + 90-day forecast • Today: Dec 5, 2025</p>
             </div>
             <div style={{display: 'flex', gap: 16, fontSize: 12, color: '#94a3b8'}}>
               <span style={{display: 'flex', alignItems: 'center', gap: 6}}><span style={{width: 8, height: 8, backgroundColor: '#06b6d4', borderRadius: '50%'}}></span> Predicted</span>
@@ -430,6 +428,7 @@
                 <XAxis dataKey="month" stroke="#94a3b8" tick={{fontSize: 11}} tickLine={false} />
                 <YAxis stroke="#94a3b8" tick={{fontSize: 11}} tickLine={false} />
                 <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: 8 }} />
+                <ReferenceLine x="Dec" stroke="#f59e0b" strokeDasharray="3 3" label={{ value: 'Today', position: 'top', fill: '#f59e0b', fontSize: 10 }} />
                 <Area type="monotone" dataKey="actual" stroke="#64748b" strokeWidth={2} fill="transparent" dot={{ r: 3 }} />
                 <Area type="monotone" dataKey="predicted" stroke="#06b6d4" strokeWidth={2} strokeDasharray="5 5" fill="url(#colorPred)" dot={{ r: 3 }} />
               </AreaChart>
