@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contoso Predictive Ops Dashboard</title>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/prop-types@15.8.1/prop-types.min.js"></script>
+  <script src="https://unpkg.com/recharts@2.10.3/umd/Recharts.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { margin: 0; font-family: system-ui, -apple-system, sans-serif; }
+    * { box-sizing: border-box; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  
+  <script type="text/babel">
+    const { useState, useEffect, useMemo } = React;
+    const { 
+      LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, 
+      Tooltip, Legend, ResponsiveContainer, Radar, RadarChart, 
+      PolarGrid, PolarAngleAxis, PolarRadiusAxis
+    } = Recharts;
+
+    // Icons as simple SVG components
+    const Icon = ({ name, size = 16, className = "" }) => {
+      const icons = {
+        'activity': <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>,
+        'alert-triangle': <><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></>,
+        'bell': <><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></>,
+        'check-circle': <><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></>,
+        'chevron-down': <polyline points="6 9 12 15 18 9"/>,
+        'chevron-right': <polyline points="9 18 15 12 9 6"/>,
+        'clock': <><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>,
+        'cpu': <><rect x="4" y="4" width="16" height="16" rx="2" ry="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 1v3"/><path d="M15 1v3"/><path d="M9 20v3"/><path d="M15 20v3"/><path d="M20 9h3"/><path d="M20 14h3"/><path d="M1 9h3"/><path d="M1 14h3"/></>,
+        'download': <><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></>,
+        'external-link': <><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></>,
+        'info': <><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></>,
+        'layers': <><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></>,
+        'map-pin': <><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></>,
+        'refresh-cw': <><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></>,
+        'shield': <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>,
+        'thermometer': <><path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z"/></>,
+        'trending-up': <><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></>,
+        'volume-2': <><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></>,
+        'wifi': <><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></>,
+        'wrench': <><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></>,
+        'x': <><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>,
+        'zap': <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>,
+        'bar-chart': <><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></>,
+        'calendar': <><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></>,
+        'arrow-up-right': <><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></>,
+        'alert-circle': <><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></>,
+      };
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+          {icons[name]}
+        </svg>
+      );
+    };
+
+    // --- Mock Data ---
+    const REGIONS = ['North America', 'Europe', 'APAC'];
+
+    const generateTrendData = (base) => [
+      { month: 'Jan', actual: base + 5, predicted: base + 4 },
+      { month: 'Feb', actual: base + 12, predicted: base + 10 },
+      { month: 'Mar', actual: base + 8, predicted: base + 9 },
+      { month: 'Apr', actual: base + 21, predicted: base + 20 },
+      { month: 'May', actual: base + 18, predicted: base + 19 },
+      { month: 'Jun', actual: base + 25, predicted: base + 24 },
+      { month: 'Jul', actual: null, predicted: base + 45 },
+      { month: 'Aug', actual: null, predicted: base + 52 },
+      { month: 'Sep', actual: null, predicted: base + 38 },
+    ];
+
+    const rawAlertData = [
+      { id: 'SN-9928-AX', model: 'X-Bass 500', risk: 98, issue: 'Coil Impedance Drift', region: 'North America', status: 'Critical', firmware: 'v2.1.4', installDate: '2022-05-12', sparkline: [40, 45, 52, 58, 65, 72, 80, 88, 94, 98] },
+      { id: 'SN-2210-BZ', model: 'Tweeter Array', risk: 85, issue: 'Freq Response Dip', region: 'Europe', status: 'Warning', firmware: 'v2.1.4', installDate: '2021-11-04', sparkline: [30, 35, 42, 55, 60, 68, 75, 80, 83, 85] },
+      { id: 'SN-4439-PL', model: 'X-Bass 500', risk: 92, issue: 'Temp Throttling', region: 'APAC', status: 'Critical', firmware: 'v3.0.0', installDate: '2023-01-20', sparkline: [25, 30, 45, 55, 62, 70, 78, 85, 90, 92] },
+      { id: 'SN-1102-MM', model: 'Surround Pro', risk: 78, issue: 'Signal Intermittency', region: 'North America', status: 'Warning', firmware: 'v1.8.9', installDate: '2020-08-15', sparkline: [50, 52, 55, 58, 62, 65, 70, 74, 76, 78] },
+      { id: 'SN-8833-QR', model: 'SoundBar Ultra', risk: 72, issue: 'Bluetooth Latency', region: 'Europe', status: 'Warning', firmware: 'v2.0.1', installDate: '2022-09-30', sparkline: [40, 45, 48, 52, 58, 62, 65, 68, 70, 72] },
+      { id: 'SN-7721-OP', model: 'X-Bass 500', risk: 88, issue: 'Magnet Degradation', region: 'North America', status: 'Critical', firmware: 'v2.1.4', installDate: '2021-03-12', sparkline: [35, 42, 50, 58, 65, 72, 78, 82, 85, 88] },
+      { id: 'SN-3392-LK', model: 'Tweeter Array', risk: 45, issue: 'Minor Distortion', region: 'APAC', status: 'Stable', firmware: 'v2.2.0', installDate: '2023-04-01', sparkline: [38, 40, 42, 43, 44, 44, 45, 45, 45, 45] },
+    ];
+
+    const failureModeData = [
+      { subject: 'Voice Coil', A: 120, fullMark: 150 },
+      { subject: 'Cone Tear', A: 98, fullMark: 150 }, 
+      { subject: 'Magnet', A: 86, fullMark: 150 },
+      { subject: 'Crossover', A: 99, fullMark: 150 },
+      { subject: 'Connector', A: 65, fullMark: 150 },
+      { subject: 'Seal', A: 40, fullMark: 150 },
+    ];
+
+    const upcomingMaintenance = [
+      { id: 'SN-9928-AX', date: 'Dec 8', type: 'Emergency', model: 'X-Bass 500', tech: 'Mike R.', location: 'Denver, CO' },
+      { id: 'SN-4439-PL', date: 'Dec 10', type: 'Preventive', model: 'X-Bass 500', tech: 'Sarah L.', location: 'Tokyo, JP' },
+      { id: 'SN-2210-BZ', date: 'Dec 12', type: 'Preventive', model: 'Tweeter Array', tech: 'Hans M.', location: 'Berlin, DE' },
+      { id: 'SN-7721-OP', date: 'Dec 15', type: 'Scheduled', model: 'X-Bass 500', tech: 'Mike R.', location: 'Seattle, WA' },
+      { id: 'SN-1102-MM', date: 'Dec 18', type: 'Scheduled', model: 'Surround Pro', tech: 'Amy K.', location: 'Austin, TX' },
+      { id: 'SN-5544-ZZ', date: 'Dec 20', type: 'Preventive', model: 'SoundBar Ultra', tech: 'John D.', location: 'London, UK' },
+    ];
+
+    const recentNotifications = [
+      { id: 1, type: 'critical', message: 'SN-9928-AX exceeded 95% failure threshold', time: '2 min ago', read: false },
+      { id: 2, type: 'warning', message: 'Firmware v3.0.1 available for 124 units', time: '15 min ago', read: false },
+      { id: 3, type: 'info', message: 'Weekly predictive model retrained successfully', time: '1 hour ago', read: true },
+      { id: 4, type: 'success', message: 'SN-5542-RT maintenance completed', time: '2 hours ago', read: true },
+    ];
+
+    const modelRiskData = [
+      { name: 'X-Bass 500', highRisk: 120, mediumRisk: 200, lowRisk: 800 },
+      { name: 'Surround Pro', highRisk: 45, mediumRisk: 150, lowRisk: 1200 },
+      { name: 'Tweeter Array', highRisk: 80, mediumRisk: 90, lowRisk: 600 },
+      { name: 'SoundBar Ultra', highRisk: 15, mediumRisk: 50, lowRisk: 2000 },
+    ];
+
+    // --- Helper Components ---
+
+    const MiniSparkline = ({ data, color = '#06b6d4', width = 60, height = 20 }) => {
+      const max = Math.max(...data);
+      const min = Math.min(...data);
+      const range = max - min || 1;
+      const points = data.map((value, index) => {
+        const x = (index / (data.length - 1)) * width;
+        const y = height - ((value - min) / range) * height;
+        return `${x},${y}`;
+      }).join(' ');
+      
+      return (
+        <svg width={width} height={height}>
+          <polyline points={points} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      );
+    };
+
+    const FleetHealthGauge = ({ value }) => {
+      const percentage = Math.min(Math.max(value, 0), 100);
+      const circumference = Math.PI * 60;
+      const strokeDashoffset = circumference - (percentage / 100) * circumference;
+      const getColor = (val) => val >= 80 ? '#22c55e' : val >= 60 ? '#f59e0b' : '#ef4444';
+      
+      return (
+        <div style={{position: 'relative', width: 128, height: 80}}>
+          <svg viewBox="0 0 100 65" style={{width: '100%', height: '100%'}}>
+            <defs>
+              <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#ef4444" />
+                <stop offset="50%" stopColor="#f59e0b" />
+                <stop offset="100%" stopColor="#22c55e" />
+              </linearGradient>
+            </defs>
+            <path d="M 20 45 A 30 30 0 0 1 80 45" fill="none" stroke="#1e293b" strokeWidth="7" strokeLinecap="round"/>
+            <path d="M 20 45 A 30 30 0 0 1 80 45" fill="none" stroke="url(#gaugeGrad)" strokeWidth="7" strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={strokeDashoffset} style={{transition: 'stroke-dashoffset 1s ease-out'}}/>
+            <text x="50" y="54" textAnchor="middle" fontSize="12" fontWeight="bold" fill={getColor(percentage)}>{percentage.toFixed(1)}%</text>
+            <text x="50" y="63" textAnchor="middle" fontSize="6" fill="#64748b" style={{textTransform: 'uppercase', letterSpacing: '0.05em'}}>Fleet Health</text>
+          </svg>
+        </div>
+      );
+    };
+
+    const KPICard = ({ title, value, iconName, trend, trendUp, accent = 'cyan' }) => {
+      const colors = { cyan: '#22d3ee', red: '#f87171', yellow: '#fbbf24', green: '#4ade80' };
+      const bgColors = { cyan: 'rgba(6,182,212,0.1)', red: 'rgba(239,68,68,0.1)', yellow: 'rgba(245,158,11,0.1)', green: 'rgba(34,197,94,0.1)' };
+      
+      return (
+        <div style={{background: 'rgba(30,41,59,0.5)', borderRadius: 12, padding: 16, border: '1px solid rgba(51,65,85,0.5)', display: 'flex', alignItems: 'center', gap: 16}}>
+          <div style={{padding: 10, borderRadius: 8, backgroundColor: bgColors[accent], color: colors[accent]}}>
+            <Icon name={iconName} size={20} />
+          </div>
+          <div style={{flex: 1, minWidth: 0}}>
+            <p style={{fontSize: 12, color: '#94a3b8', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'}}>{title}</p>
+            <div style={{display: 'flex', alignItems: 'baseline', gap: 8}}>
+              <span style={{fontSize: 20, fontWeight: 'bold', color: 'white'}}>{value}</span>
+              {trend && <span style={{fontSize: 12, fontWeight: 500, color: trendUp ? '#f87171' : '#4ade80'}}>{trend}</span>}
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    const NotificationPanel = ({ isOpen, onClose, notifications }) => {
+      const getIconName = (type) => ({ critical: 'alert-circle', warning: 'alert-triangle', success: 'check-circle' }[type] || 'info');
+      const getIconColor = (type) => ({ critical: '#f87171', warning: '#fbbf24', success: '#4ade80' }[type] || '#60a5fa');
+      
+      return (
+        <div style={{position: 'fixed', top: 0, right: 0, bottom: 0, width: 320, backgroundColor: '#0f172a', borderLeft: '1px solid #334155', boxShadow: '-4px 0 20px rgba(0,0,0,0.3)', zIndex: 50, transform: isOpen ? 'translateX(0)' : 'translateX(100%)', transition: 'transform 0.3s ease'}}>
+          <div style={{padding: 16, borderBottom: '1px solid #334155', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+            <h2 style={{margin: 0, fontWeight: 'bold', color: 'white', display: 'flex', alignItems: 'center', gap: 8}}>
+              <span style={{color: '#22d3ee'}}><Icon name="bell" size={16} /></span> Notifications
+            </h2>
+            <button onClick={onClose} style={{padding: 4, background: 'none', border: 'none', cursor: 'pointer', borderRadius: 4, color: '#94a3b8'}}>
+              <Icon name="x" size={18} />
+            </button>
+          </div>
+          <div style={{overflowY: 'auto', height: 'calc(100vh - 60px)'}}>
+            {notifications.map((n) => (
+              <div key={n.id} style={{padding: 12, borderBottom: '1px solid #1e293b', cursor: 'pointer', backgroundColor: !n.read ? 'rgba(30,41,59,0.3)' : 'transparent'}}>
+                <div style={{display: 'flex', gap: 8}}>
+                  <div style={{marginTop: 2, color: getIconColor(n.type)}}><Icon name={getIconName(n.type)} size={14} /></div>
+                  <div style={{flex: 1}}>
+                    <p style={{fontSize: 14, margin: 0, color: !n.read ? 'white' : '#cbd5e1'}}>{n.message}</p>
+                    <p style={{fontSize: 12, margin: '4px 0 0', color: '#64748b'}}>{n.time}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    };
+
+    const DiagnosticModal = ({ ticket, onClose }) => {
+      if (!ticket) return null;
+      const telemetryData = [
+        { time: '10:00', temp: 65, vibration: 12 },
+        { time: '10:05', temp: 68, vibration: 14 },
+        { time: '10:10', temp: 72, vibration: 15 },
+        { time: '10:15', temp: 85, vibration: 45 },
+        { time: '10:20', temp: 89, vibration: 52 },
+        { time: '10:25', temp: 92, vibration: 48 },
+      ];
+
+      return (
+        <div style={{position: 'fixed', inset: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, backgroundColor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)'}}>
+          <div style={{backgroundColor: '#0f172a', width: '100%', maxWidth: 896, borderRadius: 16, border: '1px solid #334155', overflow: 'hidden', maxHeight: '85vh', display: 'flex', flexDirection: 'column'}}>
+            <div style={{padding: 16, borderBottom: '1px solid #334155', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#1e293b'}}>
+              <div style={{display: 'flex', alignItems: 'center', gap: 12}}>
+                <div style={{padding: 8, borderRadius: 8, backgroundColor: ticket.status === 'Critical' ? 'rgba(239,68,68,0.2)' : 'rgba(245,158,11,0.2)', color: ticket.status === 'Critical' ? '#ef4444' : '#f59e0b'}}>
+                  <Icon name="alert-triangle" size={20} />
+                </div>
+                <div>
+                  <h2 style={{margin: 0, fontWeight: 'bold', color: 'white', display: 'flex', alignItems: 'center', gap: 8}}>
+                    {ticket.id}
+                    <span style={{fontSize: 12, fontWeight: 'normal', color: '#94a3b8', backgroundColor: '#334155', padding: '2px 8px', borderRadius: 4}}>{ticket.model}</span>
+                  </h2>
+                  <p style={{margin: '4px 0 0', fontSize: 12, color: '#94a3b8'}}>{ticket.region} • Installed {ticket.installDate}</p>
+                </div>
+              </div>
+              <button onClick={onClose} style={{padding: 8, background: 'none', border: 'none', cursor: 'pointer', borderRadius: 8, color: '#94a3b8'}}>
+                <Icon name="x" size={20} />
+              </button>
+            </div>
+            
+            <div style={{padding: 16, overflowY: 'auto', flex: 1, display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 16}}>
+              <div style={{display: 'flex', flexDirection: 'column', gap: 16}}>
+                <div style={{backgroundColor: 'rgba(30,41,59,0.5)', padding: 12, borderRadius: 12, border: '1px solid #334155'}}>
+                  <h3 style={{margin: '0 0 12px', fontSize: 12, fontWeight: 'bold', color: '#22d3ee', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 4}}>
+                    <Icon name="cpu" size={12} /> Device Info
+                  </h3>
+                  <div style={{display: 'flex', flexDirection: 'column', gap: 8, fontSize: 14}}>
+                    <div style={{display: 'flex', justifyContent: 'space-between'}}>
+                      <span style={{color: '#64748b'}}>Firmware</span>
+                      <span style={{color: 'white', fontFamily: 'monospace', fontSize: 12, backgroundColor: '#334155', padding: '2px 6px', borderRadius: 4}}>{ticket.firmware}</span>
+                    </div>
+                    <div style={{display: 'flex', justifyContent: 'space-between'}}>
+                      <span style={{color: '#64748b'}}>Warranty</span>
+                      <span style={{color: '#4ade80', fontSize: 12, display: 'flex', alignItems: 'center', gap: 4}}><Icon name="check-circle" size={10}/> Active</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div style={{backgroundColor: 'rgba(239,68,68,0.1)', padding: 12, borderRadius: 12, border: '1px solid rgba(239,68,68,0.3)'}}>
+                  <h3 style={{margin: '0 0 4px', fontSize: 12, fontWeight: 'bold', color: '#f87171', textTransform: 'uppercase'}}>Primary Error</h3>
+                  <p style={{margin: 0, color: 'white', fontWeight: 500}}>{ticket.issue}</p>
+                  <div style={{marginTop: 12}}>
+                    <div style={{display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4}}>
+                      <span style={{color: '#94a3b8'}}>Risk Score</span>
+                      <span style={{color: '#f87171', fontWeight: 'bold'}}>{ticket.risk}%</span>
+                    </div>
+                    <div style={{width: '100%', backgroundColor: '#334155', borderRadius: 9999, height: 6}}>
+                      <div style={{height: '100%', borderRadius: 9999, background: 'linear-gradient(to right, #f59e0b, #ef4444)', width: `${ticket.risk}%`}} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div style={{display: 'flex', flexDirection: 'column', gap: 16}}>
+                <div style={{backgroundColor: '#1e293b', padding: 16, borderRadius: 12, border: '1px solid #334155'}}>
+                  <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12}}>
+                    <h3 style={{margin: 0, fontSize: 14, fontWeight: 'bold', color: 'white', display: 'flex', alignItems: 'center', gap: 8}}>
+                      <span style={{color: '#22d3ee'}}><Icon name="activity" size={14} /></span> Telemetry (30m)
+                    </h3>
+                    <div style={{display: 'flex', gap: 12, fontSize: 12}}>
+                      <span style={{display: 'flex', alignItems: 'center', gap: 4, color: '#f87171'}}><Icon name="thermometer" size={10}/> Temp</span>
+                      <span style={{display: 'flex', alignItems: 'center', gap: 4, color: '#fbbf24'}}><Icon name="zap" size={10}/> Vibration</span>
+                    </div>
+                  </div>
+                  <div style={{height: 160}}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={telemetryData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+                        <XAxis dataKey="time" stroke="#94a3b8" tick={{fontSize: 10}} />
+                        <YAxis stroke="#94a3b8" tick={{fontSize: 10}} />
+                        <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', fontSize: 12 }} />
+                        <Line type="monotone" dataKey="temp" stroke="#ef4444" strokeWidth={2} dot={false} />
+                        <Line type="monotone" dataKey="vibration" stroke="#f59e0b" strokeWidth={2} dot={false} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+                
+                <div style={{backgroundColor: 'rgba(6,182,212,0.1)', padding: 12, borderRadius: 12, border: '1px solid rgba(6,182,212,0.3)'}}>
+                  <div style={{display: 'flex', alignItems: 'flex-start', gap: 8}}>
+                    <span style={{color: '#22d3ee', marginTop: 2}}><Icon name="zap" size={14} /></span>
+                    <div>
+                      <h4 style={{margin: '0 0 4px', fontSize: 12, fontWeight: 'bold', color: '#22d3ee'}}>AI Recommendation</h4>
+                      <p style={{margin: 0, color: '#cbd5e1', fontSize: 14}}>Voice coil showing thermal fatigue. Recommend replacement within <span style={{color: '#f87171', fontWeight: 'bold'}}>72 hours</span>.</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div style={{display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8}}>
+                  <button style={{backgroundColor: '#0891b2', color: 'white', padding: '8px 12px', borderRadius: 8, fontSize: 14, fontWeight: 500, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4}}>
+                    <Icon name="wifi" size={14} /> Reset
+                  </button>
+                  <button style={{backgroundColor: '#334155', color: 'white', padding: '8px 12px', borderRadius: 8, fontSize: 14, fontWeight: 500, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4}}>
+                    <Icon name="download" size={14} /> Logs
+                  </button>
+                  <button style={{backgroundColor: '#dc2626', color: 'white', padding: '8px 12px', borderRadius: 8, fontSize: 14, fontWeight: 'bold', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4}}>
+                    <Icon name="wrench" size={14} /> Dispatch
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    // --- Tab Views ---
+
+    const OverviewTab = ({ filteredAlerts, fleetHealth, liveRisk, kpiData, selectedRegion, onSelectTicket }) => (
+      <div style={{height: '100%', display: 'flex', flexDirection: 'column', gap: 16}}>
+        <div style={{display: 'flex', gap: 16, alignItems: 'stretch'}}>
+          <div style={{backgroundColor: '#1e293b', borderRadius: 12, padding: 16, border: '1px solid #334155', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+            <FleetHealthGauge value={fleetHealth} />
+          </div>
+          <div style={{flex: 1, display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12}}>
+            <KPICard title="Failure Probability" value={`${liveRisk.toFixed(1)}%`} iconName="activity" trend="+0.4%" trendUp={true} accent="red" />
+            <KPICard title="Critical Units" value={kpiData.riskCount} iconName="alert-triangle" trend={`+${Math.floor(kpiData.riskCount * 0.1)}`} trendUp={true} accent="yellow" />
+            <KPICard title="Avg RUL (Days)" value={selectedRegion === 'Europe' ? "320" : "485"} iconName="clock" trend="-12d" trendUp={true} accent="cyan" />
+            <KPICard title="Model Confidence" value="98.2%" iconName="shield" trend="+0.1%" trendUp={false} accent="green" />
+          </div>
+        </div>
+        
+        <div style={{flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', backgroundColor: '#1e293b', borderRadius: 12, border: '1px solid #334155'}}>
+          <div style={{padding: 16, borderBottom: '1px solid #334155', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0}}>
+            <h3 style={{margin: 0, fontWeight: 'bold', color: 'white', display: 'flex', alignItems: 'center', gap: 8}}>
+              Priority Queue
+              <span style={{backgroundColor: '#ef4444', color: 'white', fontSize: 10, padding: '2px 6px', borderRadius: 9999}}>{filteredAlerts.length}</span>
+            </h3>
+            <button style={{fontSize: 12, color: '#94a3b8', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4}}>
+              View All <Icon name="chevron-right" size={14} />
+            </button>
+          </div>
+          <div style={{flex: 1, overflowY: 'auto', minHeight: 0}}>
+            <table style={{width: '100%', fontSize: 14, textAlign: 'left', borderCollapse: 'collapse'}}>
+              <thead style={{fontSize: 12, color: '#64748b', textTransform: 'uppercase', backgroundColor: 'rgba(15,23,42,0.5)', position: 'sticky', top: 0}}>
+                <tr>
+                  <th style={{padding: '12px 16px'}}>Serial ID</th>
+                  <th style={{padding: '12px 16px'}}>Model</th>
+                  <th style={{padding: '12px 16px'}}>Trend</th>
+                  <th style={{padding: '12px 16px'}}>Risk</th>
+                  <th style={{padding: '12px 16px'}}>Issue</th>
+                  <th style={{padding: '12px 16px'}}>Status</th>
+                  <th style={{padding: '12px 16px'}}></th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredAlerts.map((item, idx) => (
+                  <tr key={idx} onClick={() => onSelectTicket(item)} style={{cursor: 'pointer', borderBottom: '1px solid rgba(51,65,85,0.5)'}}>
+                    <td style={{padding: '12px 16px', fontFamily: 'monospace', color: '#cbd5e1'}}>{item.id}</td>
+                    <td style={{padding: '12px 16px', color: '#94a3b8'}}>{item.model}</td>
+                    <td style={{padding: '12px 16px'}}>
+                      <MiniSparkline data={item.sparkline} color={item.status === 'Critical' ? '#ef4444' : item.status === 'Warning' ? '#f59e0b' : '#22c55e'}/>
+                    </td>
+                    <td style={{padding: '12px 16px'}}>
+                      <div style={{display: 'flex', alignItems: 'center', gap: 8}}>
+                        <div style={{width: 48, backgroundColor: '#334155', borderRadius: 9999, height: 6}}>
+                          <div style={{height: '100%', borderRadius: 9999, backgroundColor: item.status === 'Critical' ? '#ef4444' : item.status === 'Warning' ? '#f59e0b' : '#22c55e', width: `${item.risk}%`}}/>
+                        </div>
+                        <span style={{fontSize: 12, fontWeight: 'bold', color: item.status === 'Critical' ? '#f87171' : item.status === 'Warning' ? '#fbbf24' : '#4ade80'}}>{item.risk}%</span>
+                      </div>
+                    </td>
+                    <td style={{padding: '12px 16px'}}>
+                      <span style={{fontSize: 12, backgroundColor: '#334155', color: '#cbd5e1', padding: '2px 8px', borderRadius: 4}}>{item.issue}</span>
+                    </td>
+                    <td style={{padding: '12px 16px'}}>
+                      <span style={{fontSize: 12, padding: '2px 8px', borderRadius: 9999, fontWeight: 500, backgroundColor: item.status === 'Critical' ? 'rgba(239,68,68,0.2)' : item.status === 'Warning' ? 'rgba(245,158,11,0.2)' : 'rgba(34,197,94,0.2)', color: item.status === 'Critical' ? '#f87171' : item.status === 'Warning' ? '#fbbf24' : '#4ade80'}}>{item.status}</span>
+                    </td>
+                    <td style={{padding: '12px 16px', color: '#475569'}}><Icon name="arrow-up-right" size={14} /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    );
+
+    const AnalyticsTab = ({ currentTrendData }) => (
+      <div style={{display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16, height: '100%'}}>
+        <div style={{backgroundColor: '#1e293b', borderRadius: 12, padding: 20, border: '1px solid #334155', display: 'flex', flexDirection: 'column'}}>
+          <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16}}>
+            <div>
+              <h3 style={{margin: 0, fontSize: 18, fontWeight: 'bold', color: 'white'}}>Projected Failure Rate</h3>
+              <p style={{margin: '4px 0 0', fontSize: 12, color: '#94a3b8'}}>Historical vs AI Forecast (90 Days)</p>
+            </div>
+            <div style={{display: 'flex', gap: 16, fontSize: 12, color: '#94a3b8'}}>
+              <span style={{display: 'flex', alignItems: 'center', gap: 6}}><span style={{width: 8, height: 8, backgroundColor: '#06b6d4', borderRadius: '50%'}}></span> Predicted</span>
+              <span style={{display: 'flex', alignItems: 'center', gap: 6}}><span style={{width: 8, height: 8, backgroundColor: '#64748b', borderRadius: '50%'}}></span> Actual</span>
+            </div>
+          </div>
+          <div style={{flex: 1}}>
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={currentTrendData}>
+                <defs>
+                  <linearGradient id="colorPred" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#06b6d4" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+                <XAxis dataKey="month" stroke="#94a3b8" tick={{fontSize: 11}} tickLine={false} />
+                <YAxis stroke="#94a3b8" tick={{fontSize: 11}} tickLine={false} />
+                <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: 8 }} />
+                <Area type="monotone" dataKey="actual" stroke="#64748b" strokeWidth={2} fill="transparent" dot={{ r: 3 }} />
+                <Area type="monotone" dataKey="predicted" stroke="#06b6d4" strokeWidth={2} strokeDasharray="5 5" fill="url(#colorPred)" dot={{ r: 3 }} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+        
+        <div style={{display: 'flex', flexDirection: 'column', gap: 16}}>
+          <div style={{flex: 1, backgroundColor: '#1e293b', borderRadius: 12, padding: 20, border: '1px solid #334155', display: 'flex', flexDirection: 'column'}}>
+            <h3 style={{margin: '0 0 8px', fontSize: 14, fontWeight: 'bold', color: 'white'}}>Root Cause Analysis</h3>
+            <div style={{flex: 1}}>
+              <ResponsiveContainer width="100%" height="100%">
+                <RadarChart data={failureModeData}>
+                  <PolarGrid stroke="#334155" />
+                  <PolarAngleAxis dataKey="subject" tick={{ fill: '#94a3b8', fontSize: 10 }} />
+                  <PolarRadiusAxis tick={false} axisLine={false} />
+                  <Radar name="Failures" dataKey="A" stroke="#f59e0b" strokeWidth={2} fill="#f59e0b" fillOpacity={0.3} />
+                </RadarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+          
+          <div style={{background: 'linear-gradient(to bottom right, rgba(4,120,87,0.3), #1e293b)', borderRadius: 12, padding: 20, border: '1px solid rgba(34,197,94,0.3)'}}>
+            <div style={{display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12}}>
+              <div style={{padding: 6, backgroundColor: 'rgba(34,197,94,0.2)', borderRadius: 4, color: '#4ade80'}}><Icon name="trending-up" size={14} /></div>
+              <h3 style={{margin: 0, fontSize: 14, fontWeight: 'bold', color: '#4ade80'}}>Cost Savings YTD</h3>
+            </div>
+            <div style={{fontSize: 28, fontWeight: 'bold', color: 'white', marginBottom: 4}}>$847,500</div>
+            <p style={{margin: '0 0 16px', fontSize: 12, color: '#94a3b8'}}>from predictive maintenance</p>
+            <div style={{display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8, textAlign: 'center'}}>
+              <div style={{backgroundColor: 'rgba(15,23,42,0.5)', borderRadius: 8, padding: 8}}>
+                <div style={{fontSize: 18, fontWeight: 'bold', color: 'white'}}>156</div>
+                <div style={{fontSize: 10, textTransform: 'uppercase', color: '#64748b'}}>Failures Prevented</div>
+              </div>
+              <div style={{backgroundColor: 'rgba(15,23,42,0.5)', borderRadius: 8, padding: 8}}>
+                <div style={{fontSize: 18, fontWeight: 'bold', color: 'white'}}>$5.4K</div>
+                <div style={{fontSize: 10, textTransform: 'uppercase', color: '#64748b'}}>Avg Saved/Unit</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+
+    const FleetMapTab = ({ selectedRegion, onRegionChange }) => {
+      const regions = [
+        { id: 'North America', units: 3720, risk: 18, critical: 42 },
+        { id: 'Europe', units: 2480, risk: 8, critical: 12 },
+        { id: 'APAC', units: 4960, risk: 12, critical: 28 },
+      ];
+      
+      return (
+        <div style={{display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 16, height: '100%'}}>
+          <div style={{display: 'flex', flexDirection: 'column', gap: 12}}>
+            {regions.map((region) => (
+              <div key={region.id} onClick={() => onRegionChange(region.id === selectedRegion ? 'All Regions' : region.id)} style={{backgroundColor: '#1e293b', borderRadius: 12, padding: 16, border: selectedRegion === region.id ? '1px solid #06b6d4' : '1px solid #334155', cursor: 'pointer'}}>
+                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12}}>
+                  <div style={{display: 'flex', alignItems: 'center', gap: 8}}>
+                    <span style={{color: '#22d3ee'}}><Icon name="map-pin" size={16} /></span>
+                    <h3 style={{margin: 0, fontWeight: 'bold', color: 'white'}}>{region.id}</h3>
+                  </div>
+                  <span style={{fontSize: 12, padding: '2px 8px', borderRadius: 9999, backgroundColor: region.risk > 15 ? 'rgba(239,68,68,0.2)' : 'rgba(34,197,94,0.2)', color: region.risk > 15 ? '#f87171' : '#4ade80'}}>{region.risk}% risk</span>
+                </div>
+                <div style={{display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8, textAlign: 'center'}}>
+                  <div style={{backgroundColor: 'rgba(15,23,42,0.5)', borderRadius: 8, padding: 8}}>
+                    <div style={{fontSize: 18, fontWeight: 'bold', color: 'white'}}>{region.units.toLocaleString()}</div>
+                    <div style={{fontSize: 10, textTransform: 'uppercase', color: '#64748b'}}>Units</div>
+                  </div>
+                  <div style={{backgroundColor: 'rgba(15,23,42,0.5)', borderRadius: 8, padding: 8}}>
+                    <div style={{fontSize: 18, fontWeight: 'bold', color: '#f87171'}}>{region.critical}</div>
+                    <div style={{fontSize: 10, textTransform: 'uppercase', color: '#64748b'}}>Critical</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          <div style={{backgroundColor: '#1e293b', borderRadius: 12, padding: 20, border: '1px solid #334155', display: 'flex', flexDirection: 'column'}}>
+            <h3 style={{margin: '0 0 16px', fontSize: 18, fontWeight: 'bold', color: 'white'}}>Risk by Model Line</h3>
+            <div style={{flex: 1}}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={modelRiskData} layout="vertical" margin={{ left: 20, right: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" horizontal={false} />
+                  <XAxis type="number" stroke="#94a3b8" tick={{fontSize: 11}} />
+                  <YAxis dataKey="name" type="category" stroke="#94a3b8" tick={{fontSize: 11}} width={100} />
+                  <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: 8 }} />
+                  <Legend />
+                  <Bar dataKey="highRisk" name="Critical" stackId="a" fill="#ef4444" barSize={20} />
+                  <Bar dataKey="mediumRisk" name="Warning" stackId="a" fill="#f59e0b" barSize={20} />
+                  <Bar dataKey="lowRisk" name="Healthy" stackId="a" fill="#22c55e" barSize={20} radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    const MaintenanceTab = () => {
+      const getTypeColor = (type) => ({ Emergency: '#f87171', Preventive: '#fbbf24', Scheduled: '#60a5fa' }[type] || '#60a5fa');
+      const getTypeBg = (type) => ({ Emergency: 'rgba(239,68,68,0.2)', Preventive: 'rgba(245,158,11,0.2)', Scheduled: 'rgba(59,130,246,0.2)' }[type] || 'rgba(59,130,246,0.2)');
+      
+      return (
+        <div style={{display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16, height: '100%'}}>
+          <div style={{backgroundColor: '#1e293b', borderRadius: 12, border: '1px solid #334155', display: 'flex', flexDirection: 'column'}}>
+            <div style={{padding: 16, borderBottom: '1px solid #334155', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+              <h3 style={{margin: 0, fontWeight: 'bold', color: 'white', display: 'flex', alignItems: 'center', gap: 8}}>
+                <span style={{color: '#22d3ee'}}><Icon name="calendar" size={16} /></span> Upcoming Maintenance
+              </h3>
+              <button style={{fontSize: 12, color: '#22d3ee', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4}}>
+                <Icon name="external-link" size={12} /> Full Calendar
+              </button>
+            </div>
+            <div style={{flex: 1, overflowY: 'auto'}}>
+              <table style={{width: '100%', fontSize: 14, borderCollapse: 'collapse'}}>
+                <thead style={{fontSize: 12, color: '#64748b', textTransform: 'uppercase', backgroundColor: 'rgba(15,23,42,0.5)', position: 'sticky', top: 0}}>
+                  <tr>
+                    <th style={{padding: '12px 16px', textAlign: 'left'}}>Date</th>
+                    <th style={{padding: '12px 16px', textAlign: 'left'}}>Device</th>
+                    <th style={{padding: '12px 16px', textAlign: 'left'}}>Type</th>
+                    <th style={{padding: '12px 16px', textAlign: 'left'}}>Technician</th>
+                    <th style={{padding: '12px 16px', textAlign: 'left'}}>Location</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {upcomingMaintenance.map((item, idx) => (
+                    <tr key={idx} style={{borderBottom: '1px solid rgba(51,65,85,0.5)'}}>
+                      <td style={{padding: '12px 16px', color: 'white', fontWeight: 500}}>{item.date}</td>
+                      <td style={{padding: '12px 16px'}}>
+                        <div style={{color: '#cbd5e1', fontFamily: 'monospace', fontSize: 12}}>{item.id}</div>
+                        <div style={{color: '#64748b', fontSize: 12}}>{item.model}</div>
+                      </td>
+                      <td style={{padding: '12px 16px'}}>
+                        <span style={{fontSize: 12, padding: '2px 8px', borderRadius: 4, backgroundColor: getTypeBg(item.type), color: getTypeColor(item.type), border: `1px solid ${getTypeColor(item.type)}33`}}>{item.type}</span>
+                      </td>
+                      <td style={{padding: '12px 16px', color: '#cbd5e1'}}>{item.tech}</td>
+                      <td style={{padding: '12px 16px', color: '#94a3b8', fontSize: 12}}>{item.location}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          
+          <div style={{display: 'flex', flexDirection: 'column', gap: 16}}>
+            <div style={{backgroundColor: '#1e293b', borderRadius: 12, padding: 20, border: '1px solid #334155'}}>
+              <h3 style={{margin: '0 0 16px', fontSize: 14, fontWeight: 'bold', color: 'white'}}>This Week</h3>
+              <div style={{display: 'flex', flexDirection: 'column', gap: 12}}>
+                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                  <span style={{color: '#94a3b8', fontSize: 14}}>Scheduled</span>
+                  <span style={{fontSize: 20, fontWeight: 'bold', color: 'white'}}>12</span>
+                </div>
+                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                  <span style={{color: '#94a3b8', fontSize: 14}}>Completed</span>
+                  <span style={{fontSize: 20, fontWeight: 'bold', color: '#4ade80'}}>8</span>
+                </div>
+                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                  <span style={{color: '#94a3b8', fontSize: 14}}>Emergency</span>
+                  <span style={{fontSize: 20, fontWeight: 'bold', color: '#f87171'}}>2</span>
+                </div>
+              </div>
+            </div>
+            
+            <div style={{backgroundColor: '#1e293b', borderRadius: 12, padding: 20, border: '1px solid #334155'}}>
+              <h3 style={{margin: '0 0 16px', fontSize: 14, fontWeight: 'bold', color: 'white'}}>Technician Capacity</h3>
+              <div style={{display: 'flex', flexDirection: 'column', gap: 12}}>
+                {['Mike R.', 'Sarah L.', 'Hans M.'].map((tech, i) => (
+                  <div key={tech}>
+                    <div style={{display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4}}>
+                      <span style={{color: '#94a3b8'}}>{tech}</span>
+                      <span style={{color: '#cbd5e1'}}>{[75, 60, 40][i]}%</span>
+                    </div>
+                    <div style={{width: '100%', backgroundColor: '#334155', borderRadius: 9999, height: 6}}>
+                      <div style={{backgroundColor: '#06b6d4', height: 6, borderRadius: 9999, width: `${[75, 60, 40][i]}%`}} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            <button style={{backgroundColor: '#0891b2', color: 'white', padding: '12px 16px', borderRadius: 12, fontWeight: 500, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8}}>
+              <Icon name="wrench" size={16} /> Schedule New
+            </button>
+          </div>
+        </div>
+      );
+    };
+
+    const LogsTab = () => (
+      <div style={{height: '100%', display: 'flex', flexDirection: 'column', backgroundColor: '#1e293b', borderRadius: 12, border: '1px solid #334155'}}>
+        <div style={{padding: 16, borderBottom: '1px solid #334155', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+          <h3 style={{margin: 0, fontWeight: 'bold', color: 'white', display: 'flex', alignItems: 'center', gap: 8}}>
+            <span style={{color: '#22d3ee'}}><Icon name="layers" size={16} /></span> Component Telemetry Stream
+          </h3>
+          <div style={{display: 'flex', alignItems: 'center', gap: 8}}>
+            <span style={{fontSize: 12, color: '#4ade80', display: 'flex', alignItems: 'center', gap: 4}}>
+              <span style={{width: 6, height: 6, backgroundColor: '#4ade80', borderRadius: '50%'}}></span> Live
+            </span>
+            <button style={{fontSize: 12, backgroundColor: '#334155', color: 'white', padding: '4px 12px', borderRadius: 4, border: 'none', cursor: 'pointer'}}>Pause</button>
+          </div>
+        </div>
+        <div style={{flex: 1, overflowY: 'auto', fontFamily: 'monospace', fontSize: 12}}>
+          <table style={{width: '100%', borderCollapse: 'collapse'}}>
+            <thead style={{color: '#64748b', textTransform: 'uppercase', backgroundColor: 'rgba(15,23,42,0.5)', position: 'sticky', top: 0}}>
+              <tr>
+                <th style={{padding: '8px 16px', textAlign: 'left'}}>Timestamp</th>
+                <th style={{padding: '8px 16px', textAlign: 'left'}}>Device</th>
+                <th style={{padding: '8px 16px', textAlign: 'left'}}>Event</th>
+                <th style={{padding: '8px 16px', textAlign: 'left'}}>Value</th>
+                <th style={{padding: '8px 16px', textAlign: 'left'}}>Latency</th>
+              </tr>
+            </thead>
+            <tbody style={{color: '#94a3b8'}}>
+              {[...Array(15)].map((_, i) => (
+                <tr key={i} style={{borderBottom: '1px solid rgba(51,65,85,0.5)'}}>
+                  <td style={{padding: '8px 16px'}}>2025-12-05 10:{String(10+i).padStart(2, '0')}:42.{String(Math.floor(Math.random()*999)).padStart(3, '0')}</td>
+                  <td style={{padding: '8px 16px', color: '#22d3ee'}}>SN-{8830 + i}-XY</td>
+                  <td style={{padding: '8px 16px'}}>
+                    <span style={{padding: '2px 6px', borderRadius: 4, backgroundColor: i % 4 === 0 ? 'rgba(34,197,94,0.2)' : i % 4 === 1 ? 'rgba(245,158,11,0.2)' : '#334155', color: i % 4 === 0 ? '#4ade80' : i % 4 === 1 ? '#fbbf24' : '#cbd5e1'}}>
+                      {i % 4 === 0 ? 'HEARTBEAT' : i % 4 === 1 ? 'TEMP_WARN' : i % 4 === 2 ? 'FREQ_LOG' : 'PWR_READ'}
+                    </span>
+                  </td>
+                  <td style={{padding: '8px 16px'}}>{i % 4 === 0 ? 'OK' : i % 4 === 1 ? '82°C' : i % 4 === 2 ? '44.1kHz' : '12.4W'}</td>
+                  <td style={{padding: '8px 16px', color: '#64748b'}}>{15 + Math.floor(Math.random() * 30)}ms</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+
+    // --- Main App ---
+    const App = () => {
+      const [activeTab, setActiveTab] = useState('Overview');
+      const [selectedRegion, setSelectedRegion] = useState('All Regions');
+      const [selectedTicket, setSelectedTicket] = useState(null);
+      const [notificationsOpen, setNotificationsOpen] = useState(false);
+      const [loading, setLoading] = useState(false);
+      const [liveRisk, setLiveRisk] = useState(12.4);
+      const [fleetHealth, setFleetHealth] = useState(87.6);
+      const [lastRefreshed, setLastRefreshed] = useState(new Date().toLocaleTimeString());
+
+      const filteredAlerts = useMemo(() => rawAlertData.filter(item => selectedRegion === 'All Regions' || item.region === selectedRegion), [selectedRegion]);
+      const currentTrendData = useMemo(() => {
+        let base = 40;
+        if (selectedRegion === 'North America') base = 55;
+        if (selectedRegion === 'Europe') base = 30;
+        if (selectedRegion === 'APAC') base = 45;
+        return generateTrendData(base);
+      }, [selectedRegion]);
+      const kpiData = useMemo(() => ({ riskCount: filteredAlerts.filter(a => a.risk > 80).length }), [filteredAlerts]);
+
+      useEffect(() => {
+        const interval = setInterval(() => {
+          setLiveRisk(prev => +(prev + (Math.random() * 0.4 - 0.2)).toFixed(2));
+          setFleetHealth(prev => Math.max(75, Math.min(95, prev + (Math.random() * 0.4 - 0.2))));
+        }, 5000);
+        return () => clearInterval(interval);
+      }, []);
+
+      const handleRefresh = () => {
+        setLoading(true);
+        setTimeout(() => { setLastRefreshed(new Date().toLocaleTimeString()); setLoading(false); }, 600);
+      };
+
+      const tabs = [
+        { id: 'Overview', icon: 'activity' },
+        { id: 'Analytics', icon: 'bar-chart' },
+        { id: 'Fleet Map', icon: 'map-pin' },
+        { id: 'Maintenance', icon: 'wrench' },
+        { id: 'Logs', icon: 'layers' },
+      ];
+
+      const unreadCount = recentNotifications.filter(n => !n.read).length;
+
+      return (
+        <div style={{height: '100vh', backgroundColor: '#020617', color: '#f1f5f9', display: 'flex', flexDirection: 'column', overflow: 'hidden'}}>
+          <DiagnosticModal ticket={selectedTicket} onClose={() => setSelectedTicket(null)} />
+          <NotificationPanel isOpen={notificationsOpen} onClose={() => setNotificationsOpen(false)} notifications={recentNotifications} />
+          {notificationsOpen && <div style={{position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.4)', zIndex: 40}} onClick={() => setNotificationsOpen(false)} />}
+
+          {/* Header */}
+          <header style={{backgroundColor: '#0f172a', borderBottom: '1px solid #1e293b', padding: '12px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0}}>
+            <div style={{display: 'flex', alignItems: 'center', gap: 24}}>
+              <div style={{display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer'}} onClick={() => setActiveTab('Overview')}>
+                <div style={{background: 'linear-gradient(to bottom right, #06b6d4, #2563eb)', padding: 6, borderRadius: 8}}>
+                  <Icon name="volume-2" size={20} className="text-white" />
+                </div>
+                <span style={{fontSize: 18, fontWeight: 'bold', background: 'linear-gradient(to right, #22d3ee, #3b82f6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'}}>CONTOSO</span>
+                <span style={{color: '#64748b', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.1em'}}>Predictive Ops</span>
+              </div>
+              
+              <nav style={{display: 'flex', alignItems: 'center', backgroundColor: 'rgba(30,41,59,0.5)', borderRadius: 8, padding: 4, border: '1px solid rgba(51,65,85,0.5)'}}>
+                {tabs.map(({ id, icon }) => (
+                  <button key={id} onClick={() => setActiveTab(id)} style={{display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 6, fontSize: 12, fontWeight: 500, border: 'none', cursor: 'pointer', backgroundColor: activeTab === id ? '#334155' : 'transparent', color: activeTab === id ? '#22d3ee' : '#94a3b8'}}>
+                    <Icon name={icon} size={14} />
+                    <span>{id}</span>
+                  </button>
+                ))}
+              </nav>
+            </div>
+            
+            <div style={{display: 'flex', alignItems: 'center', gap: 16}}>
+              <div style={{position: 'relative'}}>
+                <select value={selectedRegion} onChange={(e) => setSelectedRegion(e.target.value)} style={{appearance: 'none', backgroundColor: '#1e293b', border: '1px solid #334155', color: '#e2e8f0', fontSize: 12, borderRadius: 8, padding: '6px 28px 6px 12px', cursor: 'pointer'}}>
+                  <option>All Regions</option>
+                  {REGIONS.map(r => <option key={r}>{r}</option>)}
+                </select>
+                <div style={{position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#94a3b8'}}><Icon name="chevron-down" size={12} /></div>
+              </div>
+              
+              <button onClick={handleRefresh} style={{padding: 6, borderRadius: 8, backgroundColor: 'transparent', border: 'none', cursor: 'pointer', color: '#94a3b8'}}>
+                <Icon name="refresh-cw" size={16} />
+              </button>
+              
+              <button onClick={() => setNotificationsOpen(true)} style={{position: 'relative', padding: 6, borderRadius: 8, backgroundColor: 'transparent', border: 'none', cursor: 'pointer', color: '#94a3b8'}}>
+                <Icon name="bell" size={16} />
+                {unreadCount > 0 && <span style={{position: 'absolute', top: -2, right: -2, width: 16, height: 16, backgroundColor: '#ef4444', borderRadius: '50%', fontSize: 9, fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white'}}>{unreadCount}</span>}
+              </button>
+              
+              <div style={{height: 32, width: 32, borderRadius: '50%', background: 'linear-gradient(to top right, #0891b2, #3b82f6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 'bold', color: 'white', cursor: 'pointer'}}>JD</div>
+            </div>
+          </header>
+
+          <main style={{flex: 1, padding: 16, overflow: 'hidden'}}>
+            {activeTab === 'Overview' && <OverviewTab filteredAlerts={filteredAlerts} fleetHealth={fleetHealth} liveRisk={liveRisk} kpiData={kpiData} selectedRegion={selectedRegion} onSelectTicket={setSelectedTicket} />}
+            {activeTab === 'Analytics' && <AnalyticsTab currentTrendData={currentTrendData} />}
+            {activeTab === 'Fleet Map' && <FleetMapTab selectedRegion={selectedRegion} onRegionChange={setSelectedRegion} />}
+            {activeTab === 'Maintenance' && <MaintenanceTab />}
+            {activeTab === 'Logs' && <LogsTab />}
+          </main>
+        </div>
+      );
+    };
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
